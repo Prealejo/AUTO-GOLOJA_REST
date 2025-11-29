@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title><%= titulo %></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+    <%- include('../../partials/adminHeader') %>
+
+    <main class="admin-page">
+        <section class="admin-header-row">
+            <div>
+                <h1 class="admin-title">Gestión de usuarios</h1>
+                <p class="admin-subtitle">
+                    Administra las cuentas de clientes y administradores.
+                </p>
+            </div>
+
+            <a href="/admin/usuarios/nuevo" class="admin-primary-btn">
+                + Crear usuario
+            </a>
+        </section>
+
+        <% if (typeof error !== 'undefined' && error) { %>
+            <div class="admin-alert admin-alert-error"><%= error %></div>
+        <% } %>
+
+        <% if (!usuarios || usuarios.length === 0) { %>
+            <div class="admin-alert admin-alert-info">
+                No hay usuarios registrados todavía.
+            </div>
+        <% } else { %>
+            <div class="admin-table-wrapper">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Apellido</th>
+                            <th>Correo</th>
+                            <th>Contraseña</th>
+                            <th>Dirección</th>
+                            <th>País</th>
+                            <th>Edad</th>
+                            <th>Tipo ID</th>
+                            <th>Identificación</th>
+                            <th>Rol</th>
+                            <th class="admin-col-actions">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% usuarios.forEach(function (u) { %>
+                            <tr>
+                                <td><%= u.IdUsuario %></td>
+                                <td><%= u.Nombre %></td>
+                                <td><%= u.Apellido %></td>
+                                <td><%= u.Email %></td>
+
+                                <!-- Contraseña en estilo monoespaciado -->
+                                <td class="admin-cell-mono">
+                                    <%= u.Contrasena %>
+                                </td>
+
+                                <td><%= u.Direccion || '-' %></td>
+                                <td><%= u.Pais %></td>
+                                <td><%= u.Edad %></td>
+                                <td><%= u.TipoIdentificacion %></td>
+                                <td><%= u.Identificacion %></td>
+
+                                <!-- Rol como badge -->
+                                <td>
+                                    <span class="admin-badge-rol <%= (u.Rol || '').toLowerCase() %>">
+                                        <%= u.Rol %>
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <div class="admin-actions">
+                                        <a href="/admin/usuarios/<%= u.IdUsuario %>/editar"
+                                           class="admin-btn admin-btn-outline">
+                                            Editar
+                                        </a>
+
+                                        <form id="form-delete-usr-<%= u.IdUsuario %>"
+                                              action="/admin/usuarios/<%= u.IdUsuario %>/eliminar"
+                                              method="post"
+                                              style="display:none"></form>
+
+                                        <button type="button"
+                                                class="admin-btn admin-btn-outline admin-btn-danger btn-eliminar-usr"
+                                                data-id="<%= u.IdUsuario %>"
+                                                data-nombre="<%= u.Nombre %> <%= u.Apellido %>">
+                                            Borrar
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Modal de confirmación de eliminación de usuario -->
+            <div id="modal-delete-usr" class="admin-modal">
+                <div class="admin-modal-content">
+                    <h3 class="admin-modal-title">Eliminar usuario</h3>
+                    <p id="modal-delete-usr-text" class="admin-modal-text">
+                        ¿Seguro que quieres eliminar este usuario?
+                    </p>
+
+                    <div class="admin-modal-actions">
+                        <button type="button" id="btn-cancel-delete-usr" class="admin-btn-secondary">
+                            Cancelar
+                        </button>
+                        <button type="button" id="btn-confirm-delete-usr" class="admin-btn-danger">
+                            Sí, eliminar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+    </main>
+
+    <script>
+        (function () {
+            const modal = document.getElementById('modal-delete-usr');
+            if (!modal) return;
+
+            const texto = document.getElementById('modal-delete-usr-text');
+            const btnCancel = document.getElementById('btn-cancel-delete-usr');
+            const btnConfirm = document.getElementById('btn-confirm-delete-usr');
+
+            let idAEliminar = null;
+
+            // Abrir modal
+            document.querySelectorAll('.btn-eliminar-usr').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const id = btn.dataset.id;
+                    const nombre = btn.dataset.nombre || '';
+                    idAEliminar = id;
+
+                    texto.textContent =
+                        `¿Seguro que quieres eliminar al usuario #${id} (${nombre})?`;
+
+                    modal.classList.add('show');
+                });
+            });
+
+            // Cancelar
+            btnCancel.addEventListener('click', () => {
+                modal.classList.remove('show');
+                idAEliminar = null;
+            });
+
+            // Confirmar
+            btnConfirm.addEventListener('click', () => {
+                if (!idAEliminar) return;
+                const form = document.getElementById('form-delete-usr-' + idAEliminar);
+                if (form) form.submit();
+                modal.classList.remove('show');
+                idAEliminar = null;
+            });
+
+            // Cerrar clickeando fuera
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('show');
+                    idAEliminar = null;
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

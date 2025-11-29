@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title><%= titulo %></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+    <%- include('../../partials/adminHeader') %>
+
+
+    <main class="admin-page">
+        <h1 class="admin-title">
+            <%= modo === 'crear' ? 'Crear vehículo' : 'Editar vehículo' %>
+        </h1>
+        <p class="admin-subtitle">
+            Completa la información del vehículo. Todos los campos son obligatorios,
+            excepto promoción, matrícula y URL de imagen.
+        </p>
+
+        <% if (errores && errores.length) { %>
+            <div class="admin-alert admin-alert-error">
+                <ul>
+                    <% errores.forEach(function(msg) { %>
+                        <li><%= msg %></li>
+                    <% }) %>
+                </ul>
+            </div>
+        <% } %>
+
+        <section class="admin-form-card">
+    <form method="post"
+          action="<%= modo === 'crear'
+                      ? '/admin/vehiculos/nuevo'
+                      : '/admin/vehiculos/' + vehiculo.IdVehiculo + '/editar' %>">
+
+        <div class="admin-form-grid">
+            <!-- fila 1 -->
+            <div class="admin-form-group">
+                <label for="Marca">Marca</label>
+                <input id="Marca" name="Marca" type="text"
+                       class="admin-input"
+                       maxlength="50" required
+                       value="<%= vehiculo.Marca || '' %>">
+            </div>
+
+            <div class="admin-form-group">
+                <label for="Modelo">Modelo</label>
+                <input id="Modelo" name="Modelo" type="text"
+                       class="admin-input"
+                       maxlength="50" required
+                       value="<%= vehiculo.Modelo || '' %>">
+            </div>
+
+            <div class="admin-form-group">
+                <label for="Anio">Año</label>
+                <input id="Anio" name="Anio" type="number"
+                       class="admin-input"
+                       min="1990"
+                       max="<%= new Date().getFullYear() %>"
+                       required
+                       data-only-int="1"
+                       value="<%= vehiculo.Anio || new Date().getFullYear() %>">
+            </div>
+
+            <!-- fila 2 -->
+            <div class="admin-form-group">
+                <label for="Capacidad">Capacidad (personas)</label>
+                <input id="Capacidad" name="Capacidad" type="number"
+                       class="admin-input"
+                       min="1" max="9" required
+                       data-only-int="1"
+                       value="<%= vehiculo.Capacidad || 4 %>">
+            </div>
+
+            <div class="admin-form-group">
+                <label for="PrecioDia">Precio por día (USD)</label>
+                <input id="PrecioDia" name="PrecioDia" type="number"
+                       class="admin-input"
+                       step="0.01" min="1" required
+                       data-money="1"
+                       value="<%= vehiculo.PrecioDia || 1 %>">
+            </div>
+
+            <!-- fila 3 -->
+            <div class="admin-form-group">
+                <label for="IdCategoria">Categoría</label>
+                <select id="IdCategoria" name="IdCategoria"
+                        class="admin-input admin-select" required>
+                    <% if (Array.isArray(categorias)) { %>
+                        <% categorias.forEach(function (c) { %>
+                            <option value="<%= c.idCategoria || c.IdCategoria %>"
+                                <%= (vehiculo.IdCategoria == (c.idCategoria || c.IdCategoria)) ? 'selected' : '' %>>
+                                <%= c.Nombre || c.nombre %>
+                            </option>
+                        <% }) %>
+                    <% } %>
+                </select>
+            </div>
+
+            <div class="admin-form-group">
+                <label for="IdSucursal">Sucursal</label>
+                <select id="IdSucursal" name="IdSucursal"
+                        class="admin-input admin-select" required>
+                    <% if (Array.isArray(sucursales)) { %>
+                        <% sucursales.forEach(function (s) { %>
+                            <option value="<%= s.idSucursal || s.IdSucursal %>"
+                                <%= (vehiculo.IdSucursal == (s.idSucursal || s.IdSucursal)) ? 'selected' : '' %>>
+                                <%= s.Nombre || s.nombre %>
+                            </option>
+                        <% }) %>
+                    <% } %>
+                </select>
+            </div>
+
+            <!-- fila 4 -->
+            <div class="admin-form-group">
+    <label for="IdTransmision">Transmisión</label>
+    <select id="IdTransmision" name="IdTransmision"
+            class="admin-input admin-select" required>
+        <% if (Array.isArray(transmisiones)) { %>
+            <% transmisiones.forEach(function (t, index) { 
+                // t puede ser string o un objeto
+                var id = t.idTransmision || t.IdTransmision || (index + 1);
+                var nombre = t.Nombre || t.nombre || t.TransmisionNombre || t;
+            %>
+                <option value="<%= id %>"
+                    <%= (vehiculo.IdTransmision == id) ? 'selected' : '' %>>
+                    <%= nombre %>
+                </option>
+            <% }) %>
+        <% } %>
+    </select>
+</div>
+
+
+            <div class="admin-form-group admin-form-group--full">
+    <label for="UrlImagen">URL imagen (opcional)</label>
+    <input id="UrlImagen" name="UrlImagen" type="url"
+           class="admin-input"
+           value="<%= vehiculo.UrlImagen || '' %>">
+</div>
+
+
+            <!-- fila 5 -->
+            <div class="admin-form-group admin-form-group--full">
+                <label for="Estado">Estado</label>
+                <select id="Estado" name="Estado"
+                        class="admin-input admin-select" required>
+                    <option value="Disponible"
+                        <%= (vehiculo.Estado || '') === 'Disponible' ? 'selected' : '' %>>
+                        Disponible
+                    </option>
+                    <option value="Mantenimiento"
+                        <%= (vehiculo.Estado || '') === 'Mantenimiento' ? 'selected' : '' %>>
+                        Mantenimiento
+                    </option>
+                    <option value="Inactivo"
+                        <%= (vehiculo.Estado || '') === 'Inactivo' ? 'selected' : '' %>>
+                        Inactivo
+                    </option>
+                </select>
+            </div>
+
+            <div class="admin-form-group admin-form-group--full">
+                <label for="Descripcion">Descripción</label>
+                <textarea id="Descripcion" name="Descripcion" rows="3"
+                          class="admin-input"
+                          maxlength="500"><%= vehiculo.Descripcion || '' %></textarea>
+            </div>
+        </div>
+
+        <div class="admin-form-footer">
+            <a href="/admin/vehiculos" class="admin-link">Volver</a>
+            <button type="submit" class="admin-primary-btn">
+                <%= modo === 'crear' ? 'Guardar vehículo' : 'Guardar cambios' %>
+            </button>
+        </div>
+    </form>
+</section>
+
+<!-- validación para bloquear + y - en numéricos -->
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[data-only-int]').forEach(function (input) {
+      input.addEventListener('input', function () {
+        this.value = this.value.replace(/[^\d]/g, '');
+      });
+    });
+
+    document.querySelectorAll('[data-money]').forEach(function (input) {
+      input.addEventListener('input', function () {
+        // solo números y punto
+        this.value = this.value.replace(/[^0-9.]/g, '');
+        const parts = this.value.split('.');
+        if (parts.length > 2) {
+          this.value = parts[0] + '.' + parts.slice(1).join('');
+        }
+      });
+    });
+  });
+</script>
+
+    </main>
+</body>
+</html>

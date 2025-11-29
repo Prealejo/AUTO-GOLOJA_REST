@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title><%= titulo %></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="vehiculos-main">
+    <section class="carrito-card">
+      <header class="carrito-header">
+        <h1>Tu carrito</h1>
+        <p class="carrito-subtitle">
+          Revisa los autos que seleccionaste antes de generar la reserva.
+        </p>
+      </header>
+
+      <% if (error) { %>
+        <div class="carrito-alert carrito-alert-error"><%= error %></div>
+      <% } %>
+
+      <% if (!items || items.length === 0) { %>
+        <p class="carrito-vacio">Tu carrito está vacío.</p>
+
+        <div class="carrito-actions carrito-actions-center">
+          <a href="/vehiculos" class="btn btn-primary">Ver vehículos</a>
+        </div>
+      <% } else { %>
+        <table class="carrito-tabla">
+          <thead>
+            <tr>
+              <th>Vehículo</th>
+              <th>Fecha inicio</th>
+              <th>Fecha fin</th>
+              <th>Subtotal</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% items.forEach(function(item) { 
+                 const idItem = item.idItem || item.IdItem || item.id || item.ID_ITEM;
+                 const nombreVehiculo = item.vehiculoNombre || item.VehiculoNombre || item.Modelo || 'Vehículo';
+                 const fechaIni = (item.fechaInicio || item.FechaInicio || '').toString().substring(0,10);
+                 const fechaFin = (item.fechaFin || item.FechaFin || '').toString().substring(0,10);
+                 const sub = item.subtotal ?? item.Subtotal ?? 0;
+            %>
+              <tr>
+                <td><%= nombreVehiculo %></td>
+                <td><%= fechaIni %></td>
+                <td><%= fechaFin %></td>
+                <td>$ <%= Number(sub).toFixed(2) %></td>
+                <td>
+                  <form method="post" action="/carrito/item/<%= idItem %>/eliminar" class="form-eliminar-item">
+                    <button type="submit" class="btn-icon-trash" title="Eliminar del carrito">
+                      🗑
+                    </button>
+                  </form>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+
+        <div class="carrito-footer">
+          <p class="carrito-totales">
+            Total: <span>$<%= Number(total || 0).toFixed(2) %></span>
+          </p>
+
+          <div class="carrito-actions">
+            <a href="/vehiculos" class="btn btn-secondary">Seguir viendo vehículos</a>
+
+            <form method="post" action="/carrito/generar-reserva">
+              <button type="submit" class="btn btn-primary">
+                Generar reserva
+              </button>
+            </form>
+          </div>
+        </div>
+      <% } %>
+    </section>
+  </main>
+</body>
+</html>

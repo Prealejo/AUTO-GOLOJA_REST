@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title><%= titulo %></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+    <%- include('../../partials/adminHeader') %>
+
+
+    <main class="admin-page">
+        <section class="admin-header-row">
+            <div>
+                <h1 class="admin-title">Gestión de vehículos</h1>
+                <p class="admin-subtitle">
+                    Administra el catálogo de vehículos que se muestran en la web pública.
+                </p>
+            </div>
+
+            <a href="/admin/vehiculos/nuevo" class="admin-primary-btn">
+                + Crear vehículo
+            </a>
+        </section>
+
+        <% if (typeof error !== 'undefined' && error) { %>
+            <div class="admin-alert admin-alert-error"><%= error %></div>
+        <% } %>
+
+        <% if (!vehiculos || vehiculos.length === 0) { %>
+            <div class="admin-alert admin-alert-info">
+                No hay vehículos registrados todavía.
+            </div>
+        <% } else { %>
+            <div class="admin-table-wrapper">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Imagen</th>
+                            <th>Marca</th>
+                            <th>Modelo</th>
+                            <th>Año</th>
+                            <th>Cap.</th>
+                            <th>Categoría</th>
+                            <th>Transmisión</th>
+                            <th>Sucursal</th>
+                            <th>Precio día</th>
+                            <th>Estado</th>
+                            <th class="admin-col-actions">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% vehiculos.forEach(function (v) { %>
+                            <tr>
+                                <td><%= v.IdVehiculo %></td>
+
+                                <!-- Miniatura -->
+                                <td>
+                                    <% if (v.UrlImagen) { %>
+                                        <img src="<%= v.UrlImagen %>"
+                                             alt="Foto <%= v.Marca %> <%= v.Modelo %>"
+                                             class="admin-thumb">
+                                    <% } else { %>
+                                        <span class="admin-tag admin-tag-muted">Sin imagen</span>
+                                    <% } %>
+                                </td>
+
+                                <td><%= v.Marca %></td>
+                                <td><%= v.Modelo %></td>
+                                <td><%= v.Anio %></td>
+                                <td><%= v.Capacidad %></td>
+
+                                <!-- Nombres en lugar de IDs -->
+                                <td><%= v.CategoriaNombre || v.Categoria || ('ID ' + v.IdCategoria) %></td>
+                                <td><%= v.TransmisionNombre || v.Transmision || ('ID ' + v.IdTransmision) %></td>
+                                <td><%= v.SucursalNombre || v.Sucursal || ('ID ' + v.IdSucursal) %></td>
+
+                                <td>$<%= v.PrecioDia %></td>
+
+                                <td>
+                                    <span class="admin-badge-estado <%= (v.Estado || '').toLowerCase() %>">
+                                        <%= v.Estado %>
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <div class="admin-actions">
+                                        <a href="/admin/vehiculos/<%= v.IdVehiculo %>/editar"
+                                           class="admin-btn admin-btn-outline">
+                                            Editar
+                                        </a>
+
+                                        <form id="form-delete-<%= v.IdVehiculo %>"
+                                              action="/admin/vehiculos/<%= v.IdVehiculo %>/eliminar"
+                                              method="post"
+                                              style="display:none"></form>
+
+                                        <button type="button"
+                                                class="admin-btn admin-btn-outline admin-btn-danger btn-eliminar"
+                                                data-id="<%= v.IdVehiculo %>"
+                                                data-descripcion="<%= v.Marca %> <%= v.Modelo %>">
+                                            Borrar
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Modal de confirmación de eliminación -->
+            <div id="modal-delete" class="admin-modal">
+                <div class="admin-modal-content">
+                    <h3 class="admin-modal-title">Eliminar vehículo</h3>
+                    <p id="modal-delete-text" class="admin-modal-text">
+                        ¿Seguro que quieres eliminar este vehículo?<br>
+                        <strong>Advertencia:</strong> también se eliminará la imagen asociada al vehículo.
+                    </p>
+
+                    <div class="admin-modal-actions">
+                        <button type="button" id="btn-cancel-delete" class="admin-btn-secondary">
+                            Cancelar
+                        </button>
+                        <button type="button" id="btn-confirm-delete" class="admin-btn-danger">
+                            Sí, eliminar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+    </main>
+
+    <script>
+        (function () {
+            const modal = document.getElementById('modal-delete');
+            if (!modal) return;
+
+            const texto = document.getElementById('modal-delete-text');
+            const btnCancel = document.getElementById('btn-cancel-delete');
+            const btnConfirm = document.getElementById('btn-confirm-delete');
+
+            let idAEliminar = null;
+
+            // Abrir modal
+            document.querySelectorAll('.btn-eliminar').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+
+                    const id = btn.dataset.id;
+                    const desc = btn.dataset.descripcion || '';
+
+                    idAEliminar = id;
+                    texto.innerHTML =
+                        `¿Seguro que quieres eliminar el vehículo #${id} (${desc})?<br>` +
+                        `<strong>Advertencia:</strong> también se eliminará la imagen asociada al vehículo.`;
+
+                    modal.classList.add('show');
+                });
+            });
+
+            // Cancelar
+            btnCancel.addEventListener('click', () => {
+                modal.classList.remove('show');
+                idAEliminar = null;
+            });
+
+            // Confirmar
+            btnConfirm.addEventListener('click', () => {
+                if (!idAEliminar) return;
+
+                const form = document.getElementById('form-delete-' + idAEliminar);
+                if (form) {
+                    form.submit();
+                }
+
+                modal.classList.remove('show');
+                idAEliminar = null;
+            });
+
+            // Cerrar haciendo click fuera del contenido
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.remove('show');
+                    idAEliminar = null;
+                }
+            });
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title><%= titulo %></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+    <%- include('../partials/header') %>
+
+    <main class="auth-main">
+        <section class="auth-card">
+            <h1>Iniciar sesión</h1>
+
+            <% if (error) { %>
+                <div class="auth-error"><%= error %></div>
+            <% } %>
+
+            <form method="post" action="/login" novalidate>
+                <% if (returnUrl) { %>
+                    <input type="hidden" name="returnUrl" value="<%= returnUrl %>">
+                <% } %>
+
+                <label class="campo">
+                    Correo electrónico
+                    <input type="email" name="email" required>
+                </label>
+
+                <label class="campo">
+                    Contraseña
+                    <div class="campo-password">
+                        <input type="password" name="password" id="login-password" required minlength="8">
+                        <button type="button" class="btn-toggle-pass" data-target="login-password">👁</button>
+                    </div>
+                </label>
+
+                <button type="submit" class="btn-auth-primary">Entrar</button>
+            </form>
+<% if (mensajeInfo) { %>
+  <div class="auth-info">
+    <%= mensajeInfo %>
+  </div>
+<% } %>
+
+            <p class="auth-link">
+                ¿No tienes cuenta?
+                <a href="/registro">Crear cuenta</a>
+            </p>
+        </section>
+    </main>
+
+    <script>
+        // Toggle mostrar/ocultar contraseña
+        document.querySelectorAll('.btn-toggle-pass').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetId = btn.dataset.target;
+                const input = document.getElementById(targetId);
+                if (!input) return;
+                const esPassword = input.type === 'password';
+                input.type = esPassword ? 'text' : 'password';
+                btn.textContent = esPassword ? '🙈' : '👁';
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title><%= titulo %></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+<body>
+<%- include('../partials/header') %>
+
+<div id="carrito-toast" class="carrito-toast">
+  <span id="carrito-toast-text"></span>
+</div>
+
+<main class="vehiculos-main">
+
+    <div class="vehiculos-layout">
+
+        <!-- ===== LADO IZQUIERDO: FILTROS ===== -->
+        <aside class="filtros">
+    <h2 class="filtros-titulo">Filtrar por</h2>
+
+    <form method="get" action="/vehiculos" class="filtros-form">
+
+        <!-- CATEGORIA -->
+        <div class="filtro-grupo">
+            <label for="categoria" class="filtro-label">Categoría</label>
+            <select id="categoria" name="categoria" class="filtro-select">
+                <option value="todas"
+                    <%= (!filtros || filtros.categoriaSeleccionada === 'todas') ? 'selected' : '' %>>
+                    Todas
+                </option>
+
+                <% if (categorias && categorias.length) { %>
+                    <% categorias.forEach(function (cat) { 
+                        var catId = cat.id || cat.Id || cat.idCategoria || cat.IdCategoria;
+                        var catNombre = cat.nombre || cat.Nombre || cat.descripcion || cat.Descripcion || ('Categoría ' + catId);
+                        var selected = (filtros && String(filtros.categoriaSeleccionada) === String(catId)) ? 'selected' : '';
+                    %>
+                        <option value="<%= catId %>" <%= selected %>><%= catNombre %></option>
+                    <% }) %>
+                <% } %>
+            </select>
+        </div>
+
+        <!-- TRANSMISION -->
+        <div class="filtro-grupo">
+            <span class="filtro-label">Transmisión</span>
+            <div class="filtro-checks">
+                <%
+                    var transSel = (filtros && filtros.transmisionesSeleccionadas)
+                        ? filtros.transmisionesSeleccionadas.map(function(t){ return String(t).toUpperCase(); })
+                        : [];
+                %>
+
+                <% if (transmisiones && transmisiones.length) { %>
+    <% transmisiones.forEach(function (t) { 
+        // getTransmisiones SIEMPRE devuelve { codigo: 'MT', nombre: 'Manual' }
+        var codigo = t.codigo;
+        var nombre = t.nombre;
+        var checked = transSel.includes(String(codigo).toUpperCase()) ? 'checked' : '';
+    %>
+        <label class="filtro-check">
+            <input type="checkbox" name="transmision" value="<%= codigo %>" <%= checked %> />
+            <span><%= nombre %></span>
+        </label>
+    <% }) %>
+<% } else { %>
+    <!-- Fallback estático si la API falla -->
+    <% ['MT','AT','CVT'].forEach(function (codigo) {
+        var nombre = codigo === 'MT' ? 'Manual' : (codigo === 'AT' ? 'Automática' : 'CVT');
+        var checked = transSel.includes(codigo) ? 'checked' : '';
+    %>
+        <label class="filtro-check">
+            <input type="checkbox" name="transmision" value="<%= codigo %>" <%= checked %> />
+            <span><%= nombre %></span>
+        </label>
+    <% }) %>
+<% } %>
+
+            </div>
+        </div>
+
+        <!-- PRECIO POR DIA -->
+        <div class="filtro-grupo">
+            <span class="filtro-label">Precio por día</span>
+            <div class="filtro-rango">
+                <%
+                    var pMin = (filtros && filtros.precioMin != null) ? filtros.precioMin : 0;
+                    var pMax = (filtros && filtros.precioMax != null) ? filtros.precioMax : 200;
+                %>
+
+                <div class="filtro-rango-valores">
+                    <span>Mín: $<span id="precioMinLabel"><%= pMin %></span></span>
+                    <span>Máx: $<span id="precioMaxLabel"><%= pMax %></span></span>
+                </div>
+
+                <div class="filtro-rango-sliders">
+                    <input type="range"
+                           id="precioMin"
+                           name="precioMin"
+                           min="0"
+                           max="200"
+                           step="5"
+                           value="<%= pMin %>">
+
+                    <input type="range"
+                           id="precioMax"
+                           name="precioMax"
+                           min="0"
+                           max="200"
+                           step="5"
+                           value="<%= pMax %>">
+                </div>
+
+                <small class="filtro-rango-hint">
+                    Arrastra las manijas para definir el rango de precios.
+                </small>
+            </div>
+        </div>
+
+        <!-- BOTONES -->
+        <div class="filtro-acciones">
+            <button type="submit" class="btn-filtros-aplicar">Aplicar filtros</button>
+            <a href="/vehiculos" class="btn-filtros-limpiar">Limpiar</a>
+        </div>
+    </form>
+</aside>
+
+
+        <!-- ===== LADO DERECHO: LISTA DE VEHÍCULOS ===== -->
+        <section class="vehiculos-lista">
+            <h1><%= titulo %></h1>
+
+            <% if (vehiculos && vehiculos.length > 0) { %>
+                <div class="grid-vehiculos">
+                    <% vehiculos.forEach(function (v) { 
+                        var img = v.urlImagen || v.UrlImagen || v.uri_imagen || v.UriImagen;
+                        var precio = v.precioDia || v.precio_dia || v.precio || v.PrecioDia;
+                        var marca = v.marca || v.Marca;
+                        var modelo = v.modelo || v.Modelo;
+                        var anio = v.anio || v.Anio;
+                        var estado = v.estado || v.Estado;
+
+                        var categoria = v.categoriaNombre || v.CategoriaNombre || v.categoria || v.Categoria;
+                        var transmisionNombre = v.transmisionNombre || v.TransmisionNombre || v.transmision || v.Transmision;
+                        var capacidad = v.capacidad || v.Capacidad || v.capacidadPasajeros;
+                        var sucursal = v.sucursalNombre || v.SucursalNombre || v.sucursal || v.Sucursal;
+
+                        var transmisionAbrev = '';
+                        if (transmisionNombre) {
+                            var t = String(transmisionNombre).toLowerCase();
+                            if (t.includes('manual')) transmisionAbrev = 'MT';
+                            else if (t.includes('autom')) transmisionAbrev = 'AT';
+                            else transmisionAbrev = transmisionNombre;
+                        }
+                    %>
+                        <article class="card-vehiculo">
+                            <a href="javascript:void(0);" 
+                               class="card-vehiculo-link btn-ver-detalle"
+                               data-id="<%= v.idVehiculo || v.IdVehiculo || v.id %>"
+                               data-img="<%= img %>"
+                               data-marca="<%= marca %>"
+                               data-modelo="<%= modelo %>"
+                               data-anio="<%= anio %>"
+                               data-precio="<%= precio %>"
+                               data-categoria="<%= categoria %>"
+                               data-transmision="<%= transmisionNombre %>"
+                               data-transmision-abrev="<%= transmisionAbrev %>"
+                               data-capacidad="<%= capacidad %>"
+                               data-sucursal="<%= sucursal %>">
+                                <% if (img) { %>
+                                    <div class="card-vehiculo-image">
+                                        <img src="<%= img %>" alt="Foto de <%= marca %> <%= modelo %>">
+                                    </div>
+                                <% } %>
+
+                                <h2><%= marca %> <%= modelo %> (<%= anio %>)</h2>
+
+                                <% if (precio) { %>
+                                    <p>Desde <strong>$<%= precio %></strong> por día</p>
+                                <% } %>
+
+                                <% if (categoria || transmisionAbrev || capacidad) { %>
+                                    <p class="card-linea-detalle">
+                                        <% if (categoria) { %><%= categoria %><% } %>
+                                        <% if (transmisionAbrev) { %> · <%= transmisionAbrev %><% } %>
+                                        <% if (capacidad) { %> · <%= capacidad %> plazas<% } %>
+                                    </p>
+                                <% } %>
+                            </a>
+                        </article>
+                    <% }) %>
+                </div>
+            <% } else { %>
+                <p>No hay vehículos disponibles por el momento.</p>
+            <% } %>
+        </section>
+    </div>
+
+    <!-- (el modal sigue igual debajo, no lo toques) -->
+</main>
+
+
+<!-- Modal de detalle -->
+<div id="vehiculo-modal" class="modal-overlay">
+    <div class="modal-detalle">
+        <button class="modal-detalle-close" id="modalCloseBtn">&times;</button>
+
+        <div class="modal-detalle-image-wrapper">
+            <img id="modalImg" src="" alt="Vehículo">
+        </div>
+
+        <div class="modal-detalle-info">
+            <h2 class="modal-detalle-titulo" id="modalTitulo">Título del vehículo</h2>
+            <p class="modal-detalle-precio" id="modalPrecio">Desde $0 / día</p>
+
+            <div class="modal-detalle-grid">
+                <div>
+                    <span class="modal-detalle-label">Categoría:</span>
+                    <span id="modalCategoria"></span>
+                </div>
+                <div>
+                    <span class="modal-detalle-label">Transmisión:</span>
+                    <span id="modalTransmision"></span>
+                </div>
+                <div>
+                    <span class="modal-detalle-label">Capacidad:</span>
+                    <span id="modalCapacidad"></span>
+                </div>
+                <div>
+                    <span class="modal-detalle-label">Sucursal:</span>
+                    <span id="modalSucursal"></span>
+                </div>
+            </div>
+
+            <div class="modal-detalle-fechas">
+                <div>
+                    <label for="modalFechaInicio">Fecha inicio</label>
+                    <input type="date" id="modalFechaInicio">
+                </div>
+                <div>
+                    <label for="modalFechaFin">Fecha fin</label>
+                    <input type="date" id="modalFechaFin">
+                </div>
+            </div>
+
+            <button class="btn-reservar" id="modalAgregarCarrito">
+                Agregar al carrito
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="/js/vehiculos.js"></script>
+</body>
+</html>

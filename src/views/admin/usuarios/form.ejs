@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title><%= titulo %></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+    <%- include('../../partials/adminHeader') %>
+
+    <main class="admin-page">
+        <section class="admin-header-row">
+            <div>
+                <h1 class="admin-title"><%= titulo %></h1>
+                <p class="admin-subtitle">
+                    Completa los datos del usuario. Todos los campos son obligatorios.
+                </p>
+            </div>
+        </section>
+
+        <%
+          // Usuario que viene del controlador (edición) o {} (creación)
+          var u = (typeof usuarioForm !== 'undefined' && usuarioForm) ? usuarioForm : {};
+          var esEdicion   = !!u.IdUsuario;
+          var tipoIdSel   = (u.TipoIdentificacion || '').toUpperCase() || 'CI';
+          var rolSel      = u.Rol || 'Cliente';
+          var paisSel     = u.Pais || 'Ecuador';
+        %>
+
+        <section class="admin-card admin-card-form">
+            <% if (typeof error !== 'undefined' && error) { %>
+                <div class="admin-alert admin-alert-error"><%= error %></div>
+            <% } %>
+
+            <% if (Array.isArray(errores) && errores.length) { %>
+                <div class="admin-alert admin-alert-error">
+                    <ul>
+                        <% errores.forEach(function(e) { %>
+                            <li><%= e %></li>
+                        <% }); %>
+                    </ul>
+                </div>
+            <% } %>
+
+            <form
+                class="admin-form"
+                method="post"
+                action="<%= esEdicion ? ('/admin/usuarios/' + u.IdUsuario + '/editar') : '/admin/usuarios/nuevo' %>">
+
+                <div class="admin-form-grid">
+                    <!-- Nombres -->
+                    <div class="admin-field">
+                        <label for="nombre">Nombres</label>
+                        <input
+                            id="nombre"
+                            name="nombres"
+                            type="text"
+                            required
+                            value="<%= u.Nombre || '' %>">
+                    </div>
+
+                    <!-- Apellidos -->
+                    <div class="admin-field">
+                        <label for="apellido">Apellidos</label>
+                        <input
+                            id="apellido"
+                            name="apellidos"
+                            type="text"
+                            required
+                            value="<%= u.Apellido || '' %>">
+                    </div>
+
+                    <!-- Email -->
+                    <div class="admin-field">
+                        <label for="email">Correo electrónico</label>
+                        <input
+                            id="email"
+                            name="email"
+                            type="email"
+                            required
+                            value="<%= u.Email || '' %>">
+                    </div>
+
+                    <!-- Contraseña -->
+                    <div class="admin-field">
+                        <label for="contrasena">Contraseña</label>
+                        <input
+                            id="contrasena"
+                            name="contrasena"
+                            type="password"
+                            required
+                            value="<%= u.Contrasena || '' %>">
+                    </div>
+
+                    <!-- Dirección -->
+                    <div class="admin-field">
+                        <label for="direccion">Dirección</label>
+                        <input
+                            id="direccion"
+                            name="direccion"
+                            type="text"
+                            required
+                            value="<%= u.Direccion || '' %>">
+                    </div>
+
+                    <!-- País -->
+                    <div class="admin-field">
+                        <label for="pais">País</label>
+                        <select id="pais" name="pais" required>
+                            <option value="">Selecciona un país</option>
+                            <option value="Ecuador"
+                                <%= paisSel === 'Ecuador' ? 'selected' : '' %>>
+                                Ecuador
+                            </option>
+                            <option value="United States"
+                                <%= paisSel === 'United States' ? 'selected' : '' %>>
+                                Estados Unidos
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Edad -->
+                    <div class="admin-field">
+    <label for="edad">Edad</label>
+    <input
+        id="edad"
+        name="edad"
+        type="text"
+        inputmode="numeric"
+        required
+        value="<%= u.Edad || '' %>">
+    <small class="admin-help-text">
+        Solo números, entre 18 y 90 años.
+    </small>
+</div>
+
+
+                    <!-- Tipo identificación -->
+                    <div class="admin-field">
+                        <label for="tipoIdentificacion">Tipo identificación</label>
+                        <select
+                            id="tipoIdentificacion"
+                            name="tipoIdentificacion"
+                            required>
+                            <option value="">Selecciona...</option>
+                            <option value="CI"
+                                <%= tipoIdSel === 'CI' ? 'selected' : '' %>>
+                                Cédula (Ecuador)
+                            </option>
+                            <option value="PASAPORTE"
+                                <%= tipoIdSel === 'PASAPORTE' ? 'selected' : '' %>>
+                                Pasaporte
+                            </option>
+                            <option value="LICENCIA"
+                                <%= tipoIdSel === 'LICENCIA' ? 'selected' : '' %>>
+                                Licencia de conducir
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Identificación -->
+                    <div class="admin-field">
+                        <label for="identificacion">Identificación</label>
+                        <input
+                            id="identificacion"
+                            name="identificacion"
+                            type="text"
+                            required
+                            value="<%= u.Identificacion || '' %>">
+                        <small id="identificacionHelp" class="admin-help-text"></small>
+                    </div>
+
+                    <!-- Rol -->
+                    <div class="admin-field">
+                        <label for="rol">Rol</label>
+                        <select id="rol" name="rol" required>
+                            <option value="Cliente" <%= rolSel === 'Cliente' ? 'selected' : '' %>>Cliente</option>
+                            <option value="Admin"   <%= rolSel === 'Admin'   ? 'selected' : '' %>>Admin</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="admin-form-actions">
+                    <a href="/admin/usuarios" class="admin-btn admin-btn-secondary">Volver</a>
+
+                    <button type="submit" class="admin-primary-btn">
+                        <%= esEdicion ? 'Guardar cambios' : 'Crear usuario' %>
+                    </button>
+                </div>
+            </form>
+        </section>
+    </main>
+
+    <script>
+      (function () {
+        const tipoSelect   = document.getElementById('tipoIdentificacion');
+        const identInput   = document.getElementById('identificacion');
+        const identHelp    = document.getElementById('identificacionHelp');
+        const edadInput    = document.getElementById('edad');
+
+        // ----- Reglas para identificación -----
+        if (tipoSelect && identInput && identHelp) {
+          function configurarIdentificacion() {
+            const tipo = tipoSelect.value;
+
+            identInput.removeAttribute('pattern');
+            identInput.removeAttribute('maxlength');
+
+            if (tipo === 'CI') {
+  identInput.pattern = '\\d{10}';
+  identInput.maxLength = 10;
+  identHelp.textContent =
+    'Cédula ecuatoriana: exactamente 10 dígitos numéricos.';
+} else if (tipo === 'PASAPORTE') {
+  identInput.pattern = '[A-Za-z0-9]{6,15}';
+  identInput.maxLength = 15;
+  identHelp.textContent =
+    'Pasaporte: 6 a 15 caracteres alfanuméricos.';
+} else if (tipo === 'LICENCIA') {
+  identInput.pattern = '[A-Za-z0-9-]{6,20}';
+  identInput.maxLength = 20;
+  identHelp.textContent =
+    'Licencia: 6 a 20 caracteres; letras, números o guiones.';
+} else {
+  identHelp.textContent = '';
+}
+
+          }
+
+          tipoSelect.addEventListener('change', configurarIdentificacion);
+          configurarIdentificacion();
+        }
+
+        // ----- Solo números en edad -----
+        if (edadInput) {
+          edadInput.addEventListener('input', function () {
+            // quitar todo lo que no sea dígito
+            this.value = this.value.replace(/\\D/g, '').slice(0, 3);
+          });
+        }
+      })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title><%= titulo %></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="vehiculos-main">
+    <section class="resumen-card">
+            <header class="resumen-header">
+        <h1>Mis reservas</h1>
+
+        <% if (mensaje) { %>
+          <div class="carrito-alert carrito-alert-ok">
+            <%= mensaje %>
+          </div>
+        <% } %>
+
+        <% if (error) { %>
+          <div class="carrito-alert carrito-alert-error">
+            <%= error %>
+          </div>
+        <% } %>
+      </header>
+
+
+      <% if (error) { %>
+        <p class="resumen-vacio"><%= error %></p>
+      <% } else if (!reservas || reservas.length === 0) { %>
+        <p class="resumen-vacio">No tienes reservas registradas todavía.</p>
+      <% } else { %>
+        <table class="resumen-tabla">
+          <thead>
+            <tr>
+              <th># Reserva</th>
+              <th>Vehículo</th>
+              <th>Fecha inicio</th>
+              <th>Fecha fin</th>
+              <th>Estado</th>
+              <th>Total</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% reservas.forEach(function(r) { %>
+              <tr>
+                <td><%= r.IdReserva || r.idReserva %></td>
+                <td><%= r.VehiculoNombre || r.vehiculoNombre || 'Vehículo' %></td>
+                <td><%= (r.FechaInicio || r.fechaInicio || '').toString().substring(0,10) %></td>
+                <td><%= (r.FechaFin || r.fechaFin || '').toString().substring(0,10) %></td>
+                <td>
+                  <% const estado = (r.Estado || r.estado || 'Pendiente').toLowerCase(); %>
+                  <span class="badge-estado badge-estado--<%= estado %>">
+                    <%= r.Estado || r.estado || 'Pendiente' %>
+                  </span>
+                </td>
+                <td>$ <%= Number(r.Total || r.total || 0).toFixed(2) %></td>
+                <td>
+                  <a href="/reservas/<%= r.IdReserva || r.idReserva %>" class="link-detalle-reserva">
+                    Ver detalle
+                  </a>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      <% } %>
+    </section>
+  </main>
+</body>
+</html>

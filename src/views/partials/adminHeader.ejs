@@ -1,0 +1,89 @@
+<header>
+    <div class="logo">
+        UrbanDrive NYC
+    </div>
+
+    <nav class="nav-links">
+        <% 
+            // Alias seguro igual que en el header normal
+            var ua = (typeof usuarioActual !== 'undefined')
+                        ? usuarioActual
+                        : (typeof usuario !== 'undefined' ? usuario : null);
+
+            const user = ua;
+            const rolRaw = user && (user.rol || user.Rol);
+            const esAdmin = rolRaw && String(rolRaw).toLowerCase() === 'admin';
+        %>
+
+        <% if (esAdmin) { %>
+            <a href="/admin">Panel admin</a>
+            <a href="/">Volver a la tienda</a>
+        <% } else { %>
+            <!-- Por si acaso entra alguien no admin -->
+            <a href="/">Inicio</a>
+        <% } %>
+
+        <% if (user) { %>
+            <!-- Menú de usuario con avatar (igual al público) -->
+            <div class="user-menu">
+                <button class="user-avatar-btn" id="userMenuBtn" type="button">
+                    <div class="user-avatar-circle">
+                        <span>
+                            <%= (user.nombres || 'U').charAt(0).toUpperCase() %>
+                        </span>
+                    </div>
+                    <span class="user-name-short">
+                        <%= user.nombres %>
+                    </span>
+                    <span class="user-menu-chevron">▾</span>
+                </button>
+
+                <div class="user-dropdown" id="userMenuDropdown">
+                    <div class="user-dropdown-user">
+                        <div class="user-avatar-circle user-avatar-small">
+                            <span>
+                                <%= (user.nombres || 'U').charAt(0).toUpperCase() %>
+                            </span>
+                        </div>
+                        <div class="user-dropdown-info">
+                            <p class="user-dropdown-name">
+                                <%= user.nombres %> <%= user.apellidos %>
+                            </p>
+                            <p class="user-dropdown-email">
+                                <%= user.email %>
+                            </p>
+                        </div>
+                    </div>
+
+                    <form action="/logout" method="post">
+                        <button type="submit" class="user-dropdown-logout">
+                            Cerrar sesión
+                        </button>
+                    </form>
+                </div>
+            </div>
+        <% } else { %>
+            <a href="/login" class="btn-login">Login</a>
+        <% } %>
+    </nav>
+</header>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const btn = document.getElementById('userMenuBtn');
+        const dropdown = document.getElementById('userMenuDropdown');
+
+        if (!btn || !dropdown) return;
+
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            dropdown.classList.toggle('show');
+        });
+
+        document.addEventListener('click', function (e) {
+            if (!dropdown.contains(e.target) && !btn.contains(e.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+    });
+</script>

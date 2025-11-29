@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title><%= titulo %></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+    <%- include('../partials/adminHeader') %>
+
+    <main class="admin-page admin-dashboard">
+        <section class="admin-header-row">
+            <div>
+                <h1 class="admin-title">Panel de administración</h1>
+                <p class="admin-subtitle">
+                    Bienvenido
+                    <strong><%= (usuario && usuario.nombres) || 'Admin' %></strong>,
+                    desde aquí puedes gestionar vehículos y usuarios.
+                </p>
+            </div>
+        </section>
+
+        <section class="admin-dashboard-grid">
+            <!-- CARD VEHICULOS -->
+            <article class="admin-card admin-card-large">
+                <div class="admin-card-icon admin-card-icon-car">
+                    🚗
+                </div>
+                <div class="admin-card-body">
+                    <h2 class="admin-card-title">Vehículos</h2>
+                    <p class="admin-card-text">
+                        Crea, actualiza y elimina los vehículos disponibles para renta.
+                    </p>
+                    <a href="/admin/vehiculos" class="admin-primary-btn">
+                        Gestionar vehículos
+                    </a>
+                </div>
+            </article>
+
+            <!-- CARD USUARIOS -->
+            <article class="admin-card admin-card-large">
+                <div class="admin-card-icon admin-card-icon-user">
+                    👤
+                </div>
+                <div class="admin-card-body">
+                    <h2 class="admin-card-title">Usuarios</h2>
+                    <p class="admin-card-text">
+                        Administra las cuentas de clientes y administradores del sistema.
+                    </p>
+                    <a href="/admin/usuarios" class="admin-primary-btn admin-primary-btn-outline">
+                        Gestionar usuarios
+                    </a>
+                </div>
+            </article>
+        </section>
+    </main>
+</body>
+</html>

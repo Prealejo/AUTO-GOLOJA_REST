@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title><%= titulo %></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="vehiculos-main">
+    <section class="resumen-card">
+      <header class="resumen-header">
+        <h1>Resumen de tu reserva</h1>
+        <p class="resumen-note">
+          Revisa los datos de tu reserva antes de continuar con el pago.
+        </p>
+      </header>
+
+      <!-- DATOS DEL CLIENTE -->
+      <section class="resumen-info-cliente">
+        <h2>Datos del cliente</h2>
+        <p>
+          <strong>Nombre:</strong>
+          <%= usuario
+                ? ((usuario.Nombre || usuario.nombre || usuario.Nombres || usuario.nombres || '') + ' ' +
+                   (usuario.Apellido || usuario.apellido || usuario.Apellidos || usuario.apellidos || ''))
+                : '' %>
+        </p>
+        <p>
+          <strong>Correo:</strong>
+          <%= usuario
+                ? (usuario.Email || usuario.email || usuario.Correo || usuario.correo || '')
+                : '' %>
+        </p>
+      </section>
+
+      <% 
+        const listaReservas = Array.isArray(reservas) ? reservas : [];
+        const subtotal = Number(total || 0);
+        const ivaCalc = +(subtotal * 0.12).toFixed(2);
+        const totalConIvaCalc = +(subtotal + ivaCalc).toFixed(2);
+      %>
+
+      <% if (!listaReservas.length) { %>
+        <p class="resumen-vacio">
+          No se pudo generar ninguna reserva. Intenta nuevamente.
+        </p>
+      <% } else { %>
+        <table class="resumen-tabla">
+          <thead>
+            <tr>
+              <th># Reserva</th>
+              <th>Vehículo</th>
+              <th>Fecha inicio</th>
+              <th>Fecha fin</th>
+              <th>Precio por día</th>
+              <th>Estado</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% listaReservas.forEach(function(r) { 
+                 const fechaIni = (r.FechaInicio || r.fechaInicio || '').toString().substring(0,10);
+                 const fechaFin = (r.FechaFin || r.fechaFin || '').toString().substring(0,10);
+
+                 let precioDia = 0;
+                 try {
+                   const d1 = new Date(fechaIni);
+                   const d2 = new Date(fechaFin);
+                   const diffMs = d2 - d1;
+                   let dias = Math.round(diffMs / (1000 * 60 * 60 * 24));
+                   if (isNaN(dias) || dias <= 0) dias = 1;
+                   const totalR = Number(r.Total || r.total || 0);
+                   precioDia = dias ? (totalR / dias) : totalR;
+                 } catch (e) {
+                   precioDia = Number(r.Total || r.total || 0);
+                 }
+
+                 const estadoRaw = (r.Estado || r.estado || 'Pendiente');
+                 const estadoLower = estadoRaw.toLowerCase();
+            %>
+              <tr>
+                <td><%= r.IdReserva || r.idReserva || '-' %></td>
+                <td><%= r.VehiculoNombre || r.vehiculoNombre || 'Vehículo' %></td>
+                <td><%= fechaIni %></td>
+                <td><%= fechaFin %></td>
+                <td>$ <%= precioDia.toFixed(2) %></td>
+                <td>
+                  <span class="badge-estado badge-estado--<%= estadoLower %>">
+                    <%= estadoRaw %>
+                  </span>
+                </td>
+                <td>$ <%= Number(r.Total || r.total || 0).toFixed(2) %></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+
+        <!-- TOTALES -->
+        <div class="resumen-totales">
+          <div class="resumen-totales-linea">
+            <span>Subtotal:</span>
+            <span>$ <%= subtotal.toFixed(2) %></span>
+          </div>
+          <div class="resumen-totales-linea">
+            <span>IVA (12%):</span>
+            <span>$ <%= ivaCalc.toFixed(2) %></span>
+          </div>
+          <div class="resumen-totales-linea resumen-totales-total">
+            <span>Total a pagar:</span>
+            <span>$ <%= totalConIvaCalc.toFixed(2) %></span>
+          </div>
+        </div>
+      <% } %>
+
+      <!-- BOTÓN SOLO PARA PAGO (CARRO YA SE VACÍO) -->
+      <div class="resumen-acciones">
+        <button type="button" class="btn-resumen-pago" disabled>
+          Proceder al pago (próximamente)
+        </button>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

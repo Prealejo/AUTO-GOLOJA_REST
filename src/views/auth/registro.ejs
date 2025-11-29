@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title><%= titulo %></title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+    <%- include('../partials/header') %>
+
+    <main class="auth-main">
+        <section class="auth-card">
+            <h1>Crear cuenta</h1>
+
+            <% if (errores && errores.length) { %>
+                <div class="auth-error">
+                    <ul>
+                        <% errores.forEach(e => { %>
+                            <li><%= e %></li>
+                        <% }) %>
+                    </ul>
+                </div>
+            <% } %>
+
+            <form method="post" action="/registro" novalidate>
+                <div class="auth-grid">
+                    <label class="campo">
+                        Nombres
+                        <input type="text" name="nombres" required
+                               value="<%= valores.nombres || '' %>">
+                    </label>
+
+                    <label class="campo">
+                        Apellidos
+                        <input type="text" name="apellidos" required
+                               value="<%= valores.apellidos || '' %>">
+                    </label>
+                </div>
+
+                <label class="campo">
+                    Correo electrónico
+                    <input type="email" name="email" required
+                           value="<%= valores.email || '' %>">
+                </label>
+
+                <label class="campo">
+                    Teléfono
+                    <input type="text" name="telefono"
+                           value="<%= valores.telefono || '' %>">
+                </label>
+<label class="campo">
+        Dirección
+        <input type="text" name="direccion"
+               value="<%= valores.direccion || '' %>">
+    </label>
+                <div class="auth-grid">
+                    <label class="campo">
+                        País
+                        <select name="pais" required>
+                            <option value="">Selecciona un país</option>
+                            <option value="Ecuador"
+                                <%= valores.pais === 'Ecuador' ? 'selected' : '' %>>
+                                Ecuador
+                            </option>
+                            <option value="United States"
+                                <%= valores.pais === 'United States' ? 'selected' : '' %>>
+                                Estados Unidos
+                            </option>
+                        </select>
+                    </label>
+
+                    <label class="campo">
+                        Edad
+                        <input type="number" name="edad" min="18" max="90" required
+                               value="<%= valores.edad || 18 %>">
+                    </label>
+                </div>
+
+                <div class="auth-grid">
+                    <label class="campo">
+                        Tipo de identificación
+                        <select name="tipoIdentificacion" id="tipoIdentificacion" required>
+                            <option value="">Selecciona...</option>
+                            <option value="CI"
+                                <%= valores.tipoIdentificacion === 'CI' ? 'selected' : '' %>>
+                                Cédula (Ecuador)
+                            </option>
+                            <option value="PASAPORTE"
+                                <%= valores.tipoIdentificacion === 'PASAPORTE' ? 'selected' : '' %>>
+                                Pasaporte
+                            </option>
+                            <option value="LICENCIA"
+                                <%= valores.tipoIdentificacion === 'LICENCIA' ? 'selected' : '' %>>
+                                Licencia de conducir
+                            </option>
+                        </select>
+                    </label>
+
+                    <label class="campo">
+                        Identificación
+                        <input type="text" name="identificacion" id="identificacion" required
+                               value="<%= valores.identificacion || '' %>">
+                        <small id="identificacionHelp" class="texto-ayuda"></small>
+                    </label>
+                </div>
+
+                <div class="auth-grid">
+                    <label class="campo">
+                        Contraseña
+                        <div class="campo-password">
+                            <input type="password" name="password" id="reg-password" required minlength="8">
+                            <button type="button" class="btn-toggle-pass" data-target="reg-password">👁</button>
+                        </div>
+                        <small>Debe tener al menos 8 caracteres, con mayúsculas, minúsculas y números.</small>
+                    </label>
+
+                    <label class="campo">
+                        Confirmar contraseña
+                        <div class="campo-password">
+                            <input type="password" name="password2" id="reg-password2" required minlength="8">
+                            <button type="button" class="btn-toggle-pass" data-target="reg-password2">👁</button>
+                        </div>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-auth-primary">Registrarme</button>
+            </form>
+
+            <p class="auth-link">
+                ¿Ya tienes cuenta?
+                <a href="/login">Iniciar sesión</a>
+            </p>
+        </section>
+    </main>
+
+    <script>
+        // Mostrar / ocultar contraseñas
+        document.querySelectorAll('.btn-toggle-pass').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetId = btn.dataset.target;
+                const input = document.getElementById(targetId);
+                if (!input) return;
+                const esPassword = input.type === 'password';
+                input.type = esPassword ? 'text' : 'password';
+                btn.textContent = esPassword ? '🙈' : '👁';
+            });
+        });
+
+        // Validación dinámica de identificación según tipo
+        const tipoSelect = document.getElementById('tipoIdentificacion');
+        const identInput = document.getElementById('identificacion');
+        const identHelp = document.getElementById('identificacionHelp');
+
+        function configurarIdentificacion() {
+            const tipo = tipoSelect.value;
+            identInput.value = identInput.value || '';
+            identInput.removeAttribute('pattern');
+            identInput.removeAttribute('maxlength');
+
+            if (tipo === 'CI') {
+                identInput.pattern = '\\d{10}';
+                identInput.maxLength = 10;
+                identHelp.textContent = 'Cédula ecuatoriana: exactamente 10 dígitos numéricos.';
+            } else if (tipo === 'PASAPORTE') {
+                identInput.pattern = '[A-Za-z0-9]{6,15}';
+                identInput.maxLength = 15;
+                identHelp.textContent = 'Pasaporte: 6 a 15 caracteres alfanuméricos.';
+            } else if (tipo === 'LICENCIA') {
+                identInput.pattern = '[A-Za-z0-9-]{6,20}';
+                identInput.maxLength = 20;
+                identHelp.textContent = 'Licencia: 6 a 20 caracteres, letras, números o guiones.';
+            } else {
+                identHelp.textContent = '';
+            }
+        }
+
+        if (tipoSelect && identInput && identHelp) {
+            tipoSelect.addEventListener('change', configurarIdentificacion);
+            configurarIdentificacion();
+        }
+    </script>
+</body>
+</html>

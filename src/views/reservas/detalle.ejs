@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title><%= titulo %></title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="/css/main.css" />
+</head>
+<body>
+  <%- include('../partials/header') %>
+
+  <main class="vehiculos-main">
+    <section class="resumen-card">
+      <header class="resumen-header">
+        <h1>Resumen de tu reserva</h1>
+        <div class="resumen-badge">
+          Revisa los datos de tu reserva antes de continuar con el pago.
+        </div>
+      </header>
+
+      <div class="resumen-body">
+        <!-- DATOS DEL CLIENTE -->
+        <section class="resumen-cliente">
+          <h2>Datos del cliente</h2>
+          <p>
+            <span class="resumen-label">Nombre:</span>
+            <span><%= clienteNombre %></span>
+          </p>
+          <p>
+            <span class="resumen-label">Correo:</span>
+            <span><%= clienteCorreo %></span>
+          </p>
+        </section>
+
+        <!-- DETALLE DE LA RESERVA -->
+        <section class="resumen-detalle">
+          <table class="carrito-tabla resumen-tabla">
+            <thead>
+              <tr>
+                <th># Reserva</th>
+                <th>Vehículo</th>
+                <th>Precio / día</th>
+                <th>Fecha inicio</th>
+                <th>Fecha fin</th>
+                <th>Estado</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><%= reserva.IdReserva || reserva.idReserva %></td>
+                <td><%= reserva.VehiculoNombre || reserva.vehiculoNombre %></td>
+                <td>$ <%= precioDia ? precioDia.toFixed(2) : '0.00' %></td>
+                <td>
+                  <%= (reserva.FechaInicio || reserva.fechaInicio || '').toString().substring(0,10) %>
+                </td>
+                <td>
+                  <%= (reserva.FechaFin || reserva.fechaFin || '').toString().substring(0,10) %>
+                </td>
+                <td>
+                  <span class="estado-badge <%= estadoReserva === 'Confirmada' ? 'estado-confirmada' : 'estado-pendiente' %>">
+                    <%= estadoReserva %>
+                  </span>
+                </td>
+                <td>$ <%= subtotal.toFixed(2) %></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- RESUMEN DE COSTOS -->
+          <div class="resumen-totales">
+            <p>
+              Subtotal:
+              <span>$ <%= subtotal.toFixed(2) %></span>
+            </p>
+            <p>
+              IVA (12%):
+              <span>$ <%= iva.toFixed(2) %></span>
+            </p>
+            <p class="total-final">
+              Total a pagar:
+              <span>$ <%= totalConIva.toFixed(2) %></span>
+            </p>
+          </div>
+        </section>
+
+        <!-- MENSAJES DE PAGO -->
+        <% if (mensajePago) { %>
+          <div class="carrito-alert carrito-alert-ok">
+            <%= mensajePago %>
+          </div>
+        <% } %>
+
+        <% if (errorPago) { %>
+          <div class="carrito-alert carrito-alert-error">
+            <%= errorPago %>
+          </div>
+        <% } %>
+
+        <!-- SI YA HAY INFO DE PAGO, MOSTRAMOS RESUMEN DE TRANSACCIÓN -->
+        <% if (infoPago) { %>
+          <section class="resumen-transaccion">
+            <h2>Detalles del pago</h2>
+            <p>
+              <span class="resumen-label">Estado del pago:</span>
+              <span>Confirmado</span>
+            </p>
+            <p>
+              <span class="resumen-label">Cuenta origen (MiBanca):</span>
+              <span><%= infoPago.cuentaOrigen %></span>
+            </p>
+            <p>
+              <span class="resumen-label">Cuenta destino (UrbanDrive):</span>
+              <span><%= infoPago.cuentaDestino %></span>
+            </p>
+            <p>
+              <span class="resumen-label">Monto pagado:</span>
+              <span>$ <%= Number(infoPago.monto || 0).toFixed(2) %></span>
+            </p>
+            <% if (infoPago.transaccionId) { %>
+              <p>
+                <span class="resumen-label">ID de transacción:</span>
+                <span><%= infoPago.transaccionId %></span>
+              </p>
+            <% } %>
+            <p>
+              <span class="resumen-label">Fecha de pago:</span>
+              <span><%= (infoPago.fecha || '').toString().substring(0,10) %></span>
+            </p>
+          </section>
+        <% } else { %>
+          <!-- FORMULARIO DE PAGO -->
+          <div class="resumen-footer">
+            <form
+              method="post"
+              action="/reservas/<%= reserva.IdReserva || reserva.idReserva %>/pagar"
+              class="form-pago"
+            >
+              <label for="cedula" class="resumen-label">
+                Cédula del titular de la cuenta MiBanca
+              </label>
+              <input
+                type="text"
+                id="cedula"
+                name="cedula"
+                maxlength="10"
+                required
+                class="input-cedula"
+                placeholder="1725985301"
+              />
+              <button type="submit" class="btn-pagar">
+                Proceder al pago
+              </button>
+            </form>
+          </div>
+        <% } %>
+
+      </div>
+    </section>
+  </main>
+</body>
+</html>
