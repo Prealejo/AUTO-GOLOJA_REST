@@ -2277,3 +2277,255 @@ input[type=number] {
   cursor: not-allowed;
   box-shadow: none;
 }
+
+/* ===========================
+   HOME – HERO
+   =========================== */
+.home-main {
+  background-color: #f5f5f7;
+}
+
+/* Hero grande con fondo */
+.home-hero {
+  position: relative;
+  min-height: 420px;
+  padding: 80px 8% 100px;
+  color: #fff;
+  background-image: linear-gradient(
+      to top,
+      rgba(0, 0, 0, 0.70),
+      rgba(0, 0, 0, 0.35)
+    ),
+    url('../img/hero-car-nyc.png'); /* cambia la ruta a tu imagen */
+  background-size: cover;
+  background-position: center center;
+  display: flex;
+  align-items: center;
+}
+
+.home-hero-inner {
+  max-width: 720px;
+}
+
+.home-hero-kicker {
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.9;
+  margin-bottom: 0.5rem;
+}
+
+.home-hero-title {
+  font-size: 2.6rem;
+  line-height: 1.2;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.home-hero-subtitle {
+  font-size: 1.05rem;
+  max-width: 560px;
+  margin-bottom: 1.25rem;
+  opacity: 0.95;
+}
+
+.home-hero-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1.75rem;
+}
+
+.home-hero-list li {
+  position: relative;
+  padding-left: 1.5rem;
+  margin-bottom: 0.4rem;
+  font-size: 0.98rem;
+}
+
+.home-hero-list li::before {
+  content: "✔";
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-size: 0.85rem;
+  color: #ffdd3b;
+}
+
+.home-hero-cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.8rem 1.5rem;
+}
+
+.btn-hero-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.8rem 1.9rem;
+  border-radius: 999px;
+  background-color: #ffbf00;
+  color: #222;
+  font-weight: 600;
+  font-size: 0.98rem;
+  text-decoration: none;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.btn-hero-primary:hover {
+  background-color: #ffc933;
+  transform: translateY(-1px);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.45);
+}
+
+.home-hero-note {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+/* ===========================
+   HOME – SECCIONES GENERALES
+   =========================== */
+.home-section {
+  padding: 60px 8%;
+}
+
+.home-section-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.home-section-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 0.35rem;
+}
+
+.home-section-subtitle {
+  font-size: 0.98rem;
+  color: #6b7280;
+}
+
+/* ===========================
+   POR QUÉ ELEGIR – CARDS
+   =========================== */
+.home-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 20px;
+}
+
+.home-feature-card {
+  background: #140b38; /* morado oscuro */
+  color: #f9fafb;
+  padding: 22px 22px 20px;
+  border-radius: 18px;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.home-feature-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: rgba(251, 191, 36, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+.home-feature-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.home-feature-text {
+  font-size: 0.93rem;
+  color: #e5e7eb;
+}
+
+/* ===========================
+   TIPS DE VIAJE
+   =========================== */
+.home-tips-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 22px;
+}
+
+.home-tip-card {
+  background: #ffffff;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 16px 35px rgba(15, 23, 42, 0.15);
+  display: flex;
+  flex-direction: column;
+}
+
+.home-tip-image {
+  height: 150px;
+  background-size: cover;
+  background-position: center;
+}
+
+/* pon aquí las rutas de tus imágenes de tips */
+.home-tip-image-1 {
+  background-image: url('../img/tip-manhattan.png');
+}
+
+.home-tip-image-2 {
+  background-image: url('../img/tip-ezpass.png');
+}
+
+.home-tip-image-3 {
+  background-image: url('../img/tip-weather.png');
+}
+
+.home-tip-body {
+  padding: 18px 18px 20px;
+}
+
+.home-tip-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+  color: #111827;
+}
+
+.home-tip-text {
+  font-size: 0.93rem;
+  color: #4b5563;
+}
+
+/* ===========================
+   RESPONSIVE
+   =========================== */
+@media (max-width: 768px) {
+  .home-hero {
+    padding: 70px 1.5rem 80px;
+    text-align: left;
+  }
+
+  .home-hero-title {
+    font-size: 2rem;
+  }
+
+  .home-hero-subtitle {
+    font-size: 0.98rem;
+  }
+
+  .home-hero-cta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .home-section {
+    padding: 50px 1.5rem;
+  }
+}

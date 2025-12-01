@@ -11,11 +11,128 @@
 <body>
 <%- include('partials/header') %>
 
-<main>
-    <h1><%= titulo %></h1>
-    <p><%= mensaje %></p>
+<main class="home-main">
 
-    <p>Esta es solo la versión de prueba. Luego aquí pondremos el diseño completo con el formulario de reserva, autos destacados, etc.</p>
+  <!-- HERO -->
+  <section class="home-hero">
+    <div class="home-hero-overlay"></div>
+
+    <div class="home-hero-inner">
+      <div class="home-hero-text">
+        <p class="home-hero-kicker">UrbanDrive NYC – renta de autos en New York</p>
+        <h1 class="home-hero-title">
+          Reserva tu auto en segundos y recorre NYC a tu manera
+        </h1>
+
+        <p class="home-hero-subtitle">
+          Elige entre modelos recientes, precios claros y soporte 24/7 para que solo te preocupes de disfrutar tu viaje.
+        </p>
+
+        <ul class="home-hero-list">
+          <li>Cobertura total y asistencia 24/7</li>
+          <li>Entrega en aeropuertos JFK, LaGuardia y Newark</li>
+          <li>Promociones especiales para reservas online</li>
+        </ul>
+
+        <div class="home-hero-cta">
+          <a href="/vehiculos" class="btn-hero-primary">
+            Ver autos disponibles
+          </a>
+          <span class="home-hero-note">
+            Sin cargos ocultos, ves el precio final antes de reservar.
+          </span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- POR QUÉ ELEGIR URBANDRIVE -->
+  <section class="home-section home-section-reasons">
+    <div class="home-section-header">
+      <h2 class="home-section-title">Por qué elegir UrbanDrive NYC</h2>
+      <p class="home-section-subtitle">
+        Más de 10 años de experiencia atendiendo a viajeros en Estados Unidos.
+      </p>
+    </div>
+
+    <div class="home-feature-grid">
+      <article class="home-feature-card">
+        
+        <h3 class="home-feature-title">Las mejores ofertas</h3>
+        <p class="home-feature-text">
+          Compara tarifas de varios modelos y encuentra el mejor precio para tus fechas.
+        </p>
+      </article>
+
+      <article class="home-feature-card">
+      
+        <h3 class="home-feature-title">Precios transparentes</h3>
+        <p class="home-feature-text">
+          Conoce el precio total desde el inicio, sin sorpresas ni cargos escondidos al final.
+        </p>
+      </article>
+
+      <article class="home-feature-card">
+        
+        <h3 class="home-feature-title">Reserva flexible</h3>
+        <p class="home-feature-text">
+          Opciones con cancelación gratuita y cambios sencillos si tus planes cambian.
+        </p>
+      </article>
+
+      <article class="home-feature-card">
+        
+        <h3 class="home-feature-title">Alertas y descuentos</h3>
+        <p class="home-feature-text">
+          Recibe promociones especiales y códigos de descuento exclusivos para NYC.
+        </p>
+      </article>
+    </div>
+  </section>
+
+  <!-- TIPS DE VIAJE -->
+  <section class="home-section home-section-tips">
+    <div class="home-section-header">
+      <h2 class="home-section-title">Tips de viaje</h2>
+      <p class="home-section-subtitle">
+        Consejos rápidos para moverte por New York con tu auto de UrbanDrive NYC.
+      </p>
+    </div>
+
+    <div class="home-tips-grid">
+      <article class="home-tip-card">
+        <div class="home-tip-image home-tip-image-1"></div>
+        <div class="home-tip-body">
+          <h3 class="home-tip-title">Conduce en Manhattan</h3>
+          <p class="home-tip-text">
+            Evita las horas pico y busca estacionamientos privados cerca de tus actividades para ahorrar tiempo y estrés.
+          </p>
+        </div>
+      </article>
+
+      <article class="home-tip-card">
+        <div class="home-tip-image home-tip-image-2"></div>
+        <div class="home-tip-body">
+          <h3 class="home-tip-title">Peajes y EZ-Pass</h3>
+          <p class="home-tip-text">
+            Pregunta por vehículos con EZ-Pass para pagar peajes sin detenerte y cargar el costo directo a tu reserva.
+          </p>
+        </div>
+      </article>
+
+      <article class="home-tip-card">
+        <div class="home-tip-image home-tip-image-3"></div>
+        <div class="home-tip-body">
+          <h3 class="home-tip-title">Clima y temporadas</h3>
+          <p class="home-tip-text">
+            En invierno elige vehículos con buena tracción y espacio para equipaje, especialmente si sales de Manhattan.
+          </p>
+        </div>
+      </article>
+    </div>
+  </section>
+
 </main>
+
 </body>
 </html>
