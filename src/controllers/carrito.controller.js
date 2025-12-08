@@ -2,6 +2,21 @@
 
 const apiClient = require('../services/apiClientSoap');
 
+// =====================================================
+// Helpers generales de fecha para validación de solapes
+// =====================================================
+function parseFechaISO(cadena) {
+  if (!cadena) return null;
+  const d = new Date(cadena);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+// Usamos el criterio [inicio, fin) → fin exclusivo
+function rangosSeSolapan(inicioA, finA, inicioB, finB) {
+  if (!inicioA || !finA || !inicioB || !finB) return false;
+  return inicioA < finB && inicioB < finA;
+}
+
 // =======================
 // Helpers para la sesión
 // =======================
@@ -117,7 +132,87 @@ const agregarItem = async (req, res) => {
   const idUsuario = getIdUsuarioFromSession(req);
 
   try {
-    // 1) Llamar al WS SOAP para agregar el item
+    // =====================================================
+    // 0) Asegurar snapshot en sesión leyendo del WS si hace falta
+    // =====================================================
+    let snapshot = Array.isArray(req.session.carritoSnapshot)
+      ? req.session.carritoSnapshot
+      : null;
+
+    if (!snapshot) {
+      // Cargar carrito actual del usuario para tener la foto real
+      const dataCarritoBefore = await apiClient.getCarritoPorUsuario(idUsuario);
+
+      let itemsBefore = [];
+      if (dataCarritoBefore) {
+        const nodeItemsBefore = dataCarritoBefore.Items || [];
+        itemsBefore = Array.isArray(nodeItemsBefore)
+          ? nodeItemsBefore
+          : [nodeItemsBefore];
+      }
+
+      snapshot = itemsBefore
+        .map(it => {
+          const idV =
+            it.IdVehiculo ||
+            it.idVehiculo ||
+            it.vehiculoId ||
+            it.id_vehiculo;
+
+          const iniStr = (
+            it.FechaInicio ||
+            it.fechaInicio ||
+            it.fecha_inicio ||
+            ''
+          ).toString().substring(0, 10);
+
+          const finStr = (
+            it.FechaFin ||
+            it.fechaFin ||
+            it.fecha_fin ||
+            ''
+          ).toString().substring(0, 10);
+
+          if (!idV || !iniStr || !finStr) return null;
+
+          return {
+            idVehiculo: Number(idV),
+            fechaInicio: iniStr,
+            fechaFin: finStr
+          };
+        })
+        .filter(x => x !== null);
+
+      req.session.carritoSnapshot = snapshot;
+    }
+
+    // =====================================================
+    // 1) Validar contra snapshot (mismo vehiculo + fechas solapadas)
+    // =====================================================
+    const inicioNueva = parseFechaISO(fechaInicio);
+    const finNueva = parseFechaISO(fechaFin);
+
+    const existeSolape = snapshot.some(it => {
+      if (Number(it.idVehiculo) !== idVehiculoNum) return false;
+
+      const inicioExist = parseFechaISO(it.fechaInicio);
+      const finExist = parseFechaISO(it.fechaFin);
+
+      return rangosSeSolapan(inicioNueva, finNueva, inicioExist, finExist);
+    });
+
+    if (existeSolape) {
+      return res.status(400).json({
+        ok: false,
+        mensaje:
+          'Este vehiculo ya esta en tu carrito con un rango de fechas que se solapa. ' +
+          'Cambia las fechas o elimina primero la otra reserva de este vehiculo.'
+      });
+    }
+
+    // =====================================================
+    // 2) Llamar al WS SOAP para agregar el item
+    // =====================================================
     const resultado = await apiClient.agregarItemCarrito({
       IdUsuario: idUsuario,
       IdVehiculo: idVehiculoNum,
@@ -125,7 +220,7 @@ const agregarItem = async (req, res) => {
       FechaFin: fechaFin
     });
 
-    // 2) Volver a leer el carrito por usuario para actualizar idCarrito e items
+    // 3) Volver a leer el carrito por usuario para actualizar idCarrito
     const dataCarrito = await apiClient.getCarritoPorUsuario(idUsuario);
 
     let carritoId = null;
@@ -135,6 +230,19 @@ const agregarItem = async (req, res) => {
         req.session.carritoId = carritoId;
       }
     }
+
+    // 4) Actualizar snapshot en sesión con el nuevo item
+    const nuevoSnapshot = Array.isArray(req.session.carritoSnapshot)
+      ? req.session.carritoSnapshot.slice()
+      : [];
+
+    nuevoSnapshot.push({
+      idVehiculo: idVehiculoNum,
+      fechaInicio,
+      fechaFin
+    });
+
+    req.session.carritoSnapshot = nuevoSnapshot;
 
     return res.json({
       ok: true,
@@ -188,12 +296,20 @@ const eliminarItem = async (req, res) => {
   }
 
   try {
+    // Eliminar en el WS / BD
     await apiClient.eliminarItemCarrito(idItem);
+
+    // ❗ Muy importante: invalidar el snapshot en sesión
+    // para que en el próximo "agregar" se vuelva a leer
+    // el carrito real desde el WS y no use datos viejos.
+    req.session.carritoSnapshot = null;
+
   } catch (err) {
     console.error(
       'Error al eliminar item del carrito:',
       err.message || err
     );
+    // Igual seguimos al carrito, solo que el log queda
   }
 
   return res.redirect('/carrito');

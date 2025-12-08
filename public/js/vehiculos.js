@@ -251,37 +251,49 @@ mostrarToastCarrito(data.mensaje || 'Vehiculo agregado al carrito.');
 
     });
 
-    // ==========================
-    // Filtros: sliders de precio
-    // ==========================
-    const rangoMin = document.getElementById('precioMin');
-    const rangoMax = document.getElementById('precioMax');
-    const labelMin = document.getElementById('precioMinLabel');
-    const labelMax = document.getElementById('precioMaxLabel');
+   // ==========================
+// Filtros: sliders de precio
+// ==========================
+const rangoMin = document.getElementById('precioMin');
+const rangoMax = document.getElementById('precioMax');
+const labelMin = document.getElementById('precioMinLabel');
+const labelMax = document.getElementById('precioMaxLabel');
 
-    if (rangoMin && rangoMax && labelMin && labelMax) {
-        const sincronizarRangos = () => {
-            let minVal = parseInt(rangoMin.value, 10);
-            let maxVal = parseInt(rangoMax.value, 10);
+if (rangoMin && rangoMax && labelMin && labelMax) {
+    const sincronizarRangos = () => {
+        let minVal = parseInt(rangoMin.value, 10);
+        let maxVal = parseInt(rangoMax.value, 10);
 
-            if (minVal > maxVal - 5) {
-                minVal = maxVal - 5;
-                rangoMin.value = minVal;
-            }
-            if (maxVal < minVal + 5) {
-                maxVal = minVal + 5;
-                rangoMax.value = maxVal;
-            }
+        // Valores por defecto si algo viene raro
+        if (isNaN(minVal)) minVal = 0;
+        if (isNaN(maxVal)) maxVal = 200;
 
-            labelMin.textContent = minVal;
-            labelMax.textContent = maxVal;
-        };
+        // Mantenerlos dentro del rango 0–200
+        minVal = Math.max(0, Math.min(200, minVal));
+        maxVal = Math.max(0, Math.min(200, maxVal));
 
-        rangoMin.addEventListener('input', sincronizarRangos);
-        rangoMax.addEventListener('input', sincronizarRangos);
+        // Forzar separación mínima de 5, sin irse a negativos
+        if (minVal > maxVal - 5) {
+            minVal = Math.max(0, maxVal - 5);
+            rangoMin.value = minVal;
+        }
+        if (maxVal < minVal + 5) {
+            maxVal = Math.min(200, minVal + 5);
+            rangoMax.value = maxVal;
+        }
 
-        sincronizarRangos();
-    }
+        labelMin.textContent = minVal;
+        labelMax.textContent = maxVal;
+    };
+
+    rangoMin.addEventListener('input', sincronizarRangos);
+    rangoMax.addEventListener('input', sincronizarRangos);
+
+    // Ajustar al cargar la página
+    sincronizarRangos();
+}
+
+
 
     
 });
