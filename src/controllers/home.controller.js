@@ -2,8 +2,8 @@
 
 const getHome = (req, res) => {
   res.render('home', {
-    titulo: 'UrbanDrive NYC',
-    mensaje: 'Bienvenido a UrbanDrive NYC – Renta de autos en New York'
+    titulo: 'AutoGo Loja',
+    mensaje: 'Viaja cómodo en Ecuador con el auto perfecto para ti  - Reserva rápido, fácil y seguro desde cualquier lugar.'
   });
 };
 

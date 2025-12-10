@@ -1,7 +1,7 @@
 // src/services/apiClientSoap.js
 const soap = require('soap');
 
-const SOAP_BASE_URL = 'http://restgesstion.runasp.net';
+const SOAP_BASE_URL = 'http://integsoap.runasp.net';
 
 // =======================================
 // Helper: crear cliente SOAP
