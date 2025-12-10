@@ -138,15 +138,7 @@
               </a>
             <% } %>
 
-            <form
-              method="post"
-              action="/reservas/<%= idReservaVista %>/cancelar"
-              class="form-cancelar-reserva"
-            >
-              <button type="submit" class="btn-cancelar-reserva">
-                Cancelar reserva
-              </button>
-            </form>
+            
           </div>
 
         <% } else if (estadoReserva === 'Confirmada') { %>
@@ -171,9 +163,7 @@
               action="/reservas/<%= idReservaVista %>/cancelar"
               class="form-cancelar-reserva"
             >
-              <button type="submit" class="btn-cancelar-reserva">
-                Cancelar reserva
-              </button>
+              
             </form>
           </div>
 
@@ -212,9 +202,7 @@
               action="/reservas/<%= idReservaVista %>/cancelar"
               class="form-cancelar-reserva"
             >
-              <button type="submit" class="btn-cancelar-reserva">
-                Cancelar reserva
-              </button>
+              
             </form>
           </div>
         <% } %>

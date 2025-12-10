@@ -79,17 +79,30 @@ async function listarMisReservas(req, res) {
     const infoPagos = req.session.infoPagos || {};
 
     const reservas = reservasRaw.map((r) => {
-      const id = r.IdReserva || r.idReserva || r.id;
-      const pago = infoPagos[String(id)];
-      if (pago) {
-        return {
-          ...r,
-          Estado: r.Estado || r.estado || 'Confirmada',
-          estado: r.Estado || r.estado || 'Confirmada'
-        };
-      }
-      return r;
-    });
+  const id = r.IdReserva || r.idReserva || r.id;
+  const pago = infoPagos[String(id)];
+
+  if (pago) {
+    // si ya marcamos reembolso en la session, mostrarla como Cancelada
+    if (pago.reembolsado) {
+      return {
+        ...r,
+        Estado: 'Cancelada',
+        estado: 'Cancelada'
+      };
+    }
+
+    // si solo tiene pago, se ve Confirmada
+    return {
+      ...r,
+      Estado: r.Estado || r.estado || 'Confirmada',
+      estado: r.Estado || r.estado || 'Confirmada'
+    };
+  }
+
+  return r;
+});
+
 
     const mensaje = req.session.mensajeReservas || null;
     req.session.mensajeReservas = null;
@@ -184,18 +197,22 @@ async function verDetalleReserva(req, res) {
       }
     }
 
-    let estadoReserva =
-      reserva.Estado ||
-      reserva.estado ||
-      (infoPago ? 'Confirmada' : 'Pendiente');
+   let estadoReserva =
+  reserva.Estado ||
+  reserva.estado ||
+  (infoPago ? 'Confirmada' : 'Pendiente');
 
-    const estadoLower = (estadoReserva || '').toLowerCase();
+// si en session ya está marcada como reembolsada, la tratamos como Cancelada
+if (infoPago && infoPago.reembolsado) {
+  estadoReserva = 'Cancelada';
+}
 
-    // Si ya está cancelada, no dejar ver detalle
-    if (estadoLower === 'cancelada') {
-      req.session.mensajeReservas = 'Esta reserva ya está cancelada.';
-      return res.redirect('/reservas');
-    }
+const estadoLower = (estadoReserva || '').toLowerCase();
+
+if (estadoLower === 'cancelada') {
+  req.session.mensajeReservas = 'Esta reserva ya está cancelada.';
+  return res.redirect('/reservas');
+}
 
     // 2) Intentar obtener la URL de la factura
     let facturaUrl = infoPago?.uriFactura || null;
@@ -387,12 +404,13 @@ async function pagarReserva(req, res) {
     try {
       // Guardamos la cuenta del cliente en referencia_externa
       const pagoBody = {
-        IdReserva: idReserva,
-        Metodo: 'Transaccion',
-        Monto: modelo.totalConIva,
-        ReferenciaExterna: String(cuentaOrigen),
-        Estado: 'Exitoso'
-      };
+  IdReserva: idReserva,
+  Metodo: 'Transaccion',
+  Monto: modelo.totalConIva,
+  ReferenciaExterna: String(cuentaOrigen), // aqui guardamos la cuenta del cliente
+  Estado: 'Exitoso'
+};
+
 
       console.log('[pagarReserva] Llamando a REST_Pagos.CrearPago...');
       console.log('[REST_Pagos] Request CrearPago:', pagoBody);
@@ -559,70 +577,34 @@ async function cancelarReserva(req, res) {
 
     // ============ CASO 2: CONFIRMADA ==============
     if (estado === 'confirmada') {
-      // 2) Buscar último pago de esa reserva
-      let pagos = [];
-      try {
-        const respPagos = await apiClient.getPagosPorReserva(idReserva);
-        pagos = Array.isArray(respPagos?.data)
-          ? respPagos.data
-          : Array.isArray(respPagos)
-          ? respPagos
-          : [];
-      } catch (e) {
-        console.error(
-          'Error REST getPagosPorReserva en cancelar:',
-          e.message || e
-        );
-      }
+      // 1) Tomar datos del pago desde la sesión
+      const infoPagos = req.session.infoPagos || {};
+      const infoPago = infoPagos[String(idReserva)] || null;
 
-      if (!pagos.length) {
+      if (!infoPago) {
         req.session.mensajeReservas =
-          'No se encontró ningún pago para esta reserva. No se puede hacer reembolso.';
-        return res.redirect('/reservas');
+          'No se encontró la información del pago en esta sesión. Intenta cancelar desde el mismo navegador donde realizaste el pago.';
+        return res.redirect(`/reservas/${idReserva}`);
       }
 
-      const ultimo = pagos[pagos.length - 1];
+  // si ya se reembolsó antes, no volvemos a hacer transaccion
+  if (infoPago.reembolsado) {
+    req.session.mensajeReservas =
+      'Esta reserva ya fue cancelada y el reembolso ya fue procesado.';
+    return res.redirect('/reservas');
+  }
 
-      // cuenta del cliente guardada en referencia_externa
-      const cuentaCliente = Number(
-        ultimo.ReferenciaExterna ||
-          ultimo.referencia_externa ||
-          ultimo.referenciaExterna ||
-          0
-      );
+      const cuentaCliente = Number(infoPago.cuentaOrigen || 0);   // cliente
+      const cuentaComercio = Number(infoPago.cuentaDestino || 0); // empresa
+      const monto = Number(infoPago.monto || 0);
 
-      const monto = Number(ultimo.Monto || ultimo.monto || 0);
-
-      if (!cuentaCliente || !monto) {
+      if (!cuentaCliente || !cuentaComercio || !monto) {
         req.session.mensajeReservas =
-          'No se pudo determinar la información del pago. No se realizó el reembolso.';
-        return res.redirect('/reservas');
+          'Los datos del pago están incompletos. No se pudo realizar el reembolso.';
+        return res.redirect(`/reservas/${idReserva}`);
       }
 
-      // Cuenta del comercio: siempre la misma, la obtenemos por EMPRESA_CEDULA
-      let cuentaComercio = 0;
-      try {
-        const cuentasEmpresa = await bancoClient.obtenerCuentasPorCliente(
-          bancoClient.EMPRESA_CEDULA
-        );
-        const listaEmp = Array.isArray(cuentasEmpresa) ? cuentasEmpresa : [];
-        if (!listaEmp.length) {
-          req.session.mensajeReservas =
-            'No se encontró la cuenta de la empresa para hacer el reembolso.';
-          return res.redirect('/reservas');
-        }
-        cuentaComercio = Number(listaEmp[0].cuenta_id);
-      } catch (e) {
-        console.error(
-          'Error obteniendo cuenta de empresa para reembolso:',
-          e.message || e
-        );
-        req.session.mensajeReservas =
-          'No se pudo obtener la cuenta de la empresa. No se realizó el reembolso.';
-        return res.redirect('/reservas');
-      }
-
-      // 3) Hacer transacción inversa en MiBanca (reembolso)
+      // 2) Hacer transacción inversa en MiBanca (reembolso)
       let refundOk = false;
       try {
         const trx = await bancoClient.crearTransaccion({
@@ -649,7 +631,7 @@ async function cancelarReserva(req, res) {
         return res.redirect(`/reservas/${idReserva}`);
       }
 
-      // 4) Marcar reserva como Cancelada
+      // 3) Marcar reserva como Cancelada
       try {
         await apiClient.actualizarEstadoReserva(idReserva, 'Cancelada');
       } catch (e) {
@@ -658,9 +640,13 @@ async function cancelarReserva(req, res) {
           e.message || e
         );
         req.session.mensajeReservas =
-          'Se realizó el reembolso, pero no se pudo cancelar la reserva. Revisa con soporte.';
+          'Se realizó el reembolso, pero no se pudo cambiar el estado de la reserva. Revisa con soporte.';
         return res.redirect(`/reservas/${idReserva}`);
       }
+
+      // 4) Marcar en sesión que ya se reembolsó (opcional)
+      infoPagos[String(idReserva)].reembolsado = true;
+      req.session.infoPagos = infoPagos;
 
       req.session.mensajeReservas =
         'Reserva cancelada y reembolso realizado correctamente.';
