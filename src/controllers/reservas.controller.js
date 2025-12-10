@@ -1,5 +1,5 @@
 // src/controllers/reservas.controller.js
-const apiClient = require('../services/apiClientSoap');
+const apiClient = require('../services/apiClientRest');
 const bancoClient = require('../services/bancoClient');
 
 // ===============================
@@ -8,10 +8,8 @@ const bancoClient = require('../services/bancoClient');
 function armarModeloReserva(reserva, usuarioSesion) {
   const u = usuarioSesion || {};
 
-  // Subtotal viene del total de la reserva (sin impuesto)
   const subtotal = Number(reserva.Total || reserva.total || 0);
 
-  // TAX de New York: 8.875%
   const taxRate = 0.08875;
   const iva = +(subtotal * taxRate).toFixed(2);
   const totalConIva = +(subtotal + iva).toFixed(2);
@@ -86,8 +84,8 @@ async function listarMisReservas(req, res) {
       if (pago) {
         return {
           ...r,
-          Estado: 'Confirmada',
-          estado: 'Confirmada'
+          Estado: r.Estado || r.estado || 'Confirmada',
+          estado: r.Estado || r.estado || 'Confirmada'
         };
       }
       return r;
@@ -142,9 +140,7 @@ async function verDetalleReserva(req, res) {
 
     const modelo = armarModeloReserva(reserva, req.session.usuario);
 
-    // ================================
     // 1) Leer info de pago (sesión + WS_Pagos)
-    // ================================
     let infoPagos = req.session.infoPagos || {};
     let infoPago = infoPagos[String(idReserva)] || null;
 
@@ -160,6 +156,9 @@ async function verDetalleReserva(req, res) {
               ultimo.CuentaCliente ||
               ultimo.cuentaCliente ||
               ultimo.cuenta_origen ||
+              ultimo.ReferenciaExterna ||
+              ultimo.referencia_externa ||
+              ultimo.referenciaExterna ||
               null,
             cuentaDestino:
               ultimo.CuentaComercio ||
@@ -167,7 +166,11 @@ async function verDetalleReserva(req, res) {
               ultimo.cuenta_destino ||
               null,
             monto: Number(ultimo.Monto || ultimo.monto || 0),
-            fecha: ultimo.FechaPago || ultimo.fecha_pago || ultimo.fechaPago || null
+            fecha:
+              ultimo.FechaPago ||
+              ultimo.fecha_pago ||
+              ultimo.fechaPago ||
+              null
           };
 
           if (!req.session.infoPagos) req.session.infoPagos = {};
@@ -175,20 +178,26 @@ async function verDetalleReserva(req, res) {
         }
       } catch (errPagos) {
         console.error(
-          'No se pudo recuperar pago desde WS_Pagos:',
+          'No se pudo recuperar pago desde Rest:',
           errPagos.message || errPagos
         );
       }
     }
 
-    const estadoReserva =
+    let estadoReserva =
       reserva.Estado ||
       reserva.estado ||
       (infoPago ? 'Confirmada' : 'Pendiente');
 
-    // ================================
+    const estadoLower = (estadoReserva || '').toLowerCase();
+
+    // Si ya está cancelada, no dejar ver detalle
+    if (estadoLower === 'cancelada') {
+      req.session.mensajeReservas = 'Esta reserva ya está cancelada.';
+      return res.redirect('/reservas');
+    }
+
     // 2) Intentar obtener la URL de la factura
-    // ================================
     let facturaUrl = infoPago?.uriFactura || null;
 
     if (!facturaUrl) {
@@ -267,6 +276,16 @@ async function pagarReserva(req, res) {
 
     const modelo = armarModeloReserva(reserva, req.session.usuario);
 
+    const estadoActual =
+      (reserva.Estado || reserva.estado || '').toString().toLowerCase();
+
+    // Si la reserva ya está cancelada, no permitir pagar
+    if (estadoActual === 'cancelada') {
+      req.session.mensajeReservas =
+        'Esta reserva está cancelada, no se puede realizar el pago.';
+      return res.redirect('/reservas');
+    }
+
     if (!cedula) {
       const infoPagos = req.session.infoPagos || {};
       const infoPago = infoPagos[String(idReserva)] || null;
@@ -323,7 +342,7 @@ async function pagarReserva(req, res) {
     const cuentaCli = listaCliente[0];
     const cuentaOrigen = Number(cuentaCli.cuenta_id);
 
-    // 3) Cuenta de la empresa
+    // 3) Cuenta de la empresa (comercio)
     const cuentasEmpresa = await bancoClient.obtenerCuentasPorCliente(
       bancoClient.EMPRESA_CEDULA
     );
@@ -366,21 +385,24 @@ async function pagarReserva(req, res) {
 
     // 4.1) Registrar pago en WS_Pagos (BD interna)
     try {
+      // Guardamos la cuenta del cliente en referencia_externa
       const pagoBody = {
         IdReserva: idReserva,
-        CuentaCliente: cuentaOrigen,
-        CuentaComercio: cuentaDestino,
-        Monto: modelo.totalConIva
+        Metodo: 'Transaccion',
+        Monto: modelo.totalConIva,
+        ReferenciaExterna: String(cuentaOrigen),
+        Estado: 'Exitoso'
       };
 
-      console.log('[pagarReserva] Llamando a WS_Pagos.CrearPago...');
-      console.log('[WS_Pagos] Request CrearPago:', pagoBody);
+      console.log('[pagarReserva] Llamando a REST_Pagos.CrearPago...');
+      console.log('[REST_Pagos] Request CrearPago:', pagoBody);
 
       const pagoResp = await apiClient.registrarPagoReserva(pagoBody);
-      console.log('[WS_Pagos] Respuesta CrearPago:', pagoResp);
+
+      console.log('[REST_Pagos] Respuesta CrearPago:', pagoResp);
     } catch (errPago) {
       console.error(
-        'Error registrando pago en WS_RentaAutos:',
+        'Error registrando pago en Rest:',
         errPago.message || errPago
       );
     }
@@ -395,7 +417,7 @@ async function pagarReserva(req, res) {
       );
     }
 
-    // 4.3) Crear FACTURA en el WS (genera PDF + Cloudinary + guarda en SQL)
+    // 4.3) Crear FACTURA en el WS
     let idFacturaCreada = null;
     let facturaCreada = null;
 
@@ -490,8 +512,179 @@ async function pagarReserva(req, res) {
   }
 }
 
+// =======================================
+// POST /reservas/:id/cancelar
+// =======================================
+async function cancelarReserva(req, res) {
+  if (!req.session.usuario) {
+    return res.redirect('/login?returnUrl=/reservas');
+  }
+
+  const idReserva = parseInt(req.params.id, 10);
+  if (!idReserva || Number.isNaN(idReserva)) {
+    return res.redirect('/reservas');
+  }
+
+  try {
+    const data = await apiClient.getReservaPorId(idReserva);
+    const reserva = data?.data || data;
+
+    if (!reserva) {
+      req.session.mensajeReservas = 'No se encontró la reserva.';
+      return res.redirect('/reservas');
+    }
+
+    const estado =
+      (reserva.Estado || reserva.estado || '').toString().toLowerCase();
+
+    if (estado === 'cancelada') {
+      req.session.mensajeReservas = 'La reserva ya está cancelada.';
+      return res.redirect('/reservas');
+    }
+
+    // ============ CASO 1: PENDIENTE ==============
+    if (estado === 'pendiente') {
+      try {
+        await apiClient.actualizarEstadoReserva(idReserva, 'Cancelada');
+      } catch (e) {
+        console.error('Error cancelando reserva pendiente:', e.message || e);
+        req.session.mensajeReservas =
+          'No se pudo cancelar la reserva. Intenta nuevamente.';
+        return res.redirect('/reservas');
+      }
+
+      req.session.mensajeReservas = 'Reserva cancelada correctamente.';
+      return res.redirect('/reservas');
+    }
+
+    // ============ CASO 2: CONFIRMADA ==============
+    if (estado === 'confirmada') {
+      // 2) Buscar último pago de esa reserva
+      let pagos = [];
+      try {
+        const respPagos = await apiClient.getPagosPorReserva(idReserva);
+        pagos = Array.isArray(respPagos?.data)
+          ? respPagos.data
+          : Array.isArray(respPagos)
+          ? respPagos
+          : [];
+      } catch (e) {
+        console.error(
+          'Error REST getPagosPorReserva en cancelar:',
+          e.message || e
+        );
+      }
+
+      if (!pagos.length) {
+        req.session.mensajeReservas =
+          'No se encontró ningún pago para esta reserva. No se puede hacer reembolso.';
+        return res.redirect('/reservas');
+      }
+
+      const ultimo = pagos[pagos.length - 1];
+
+      // cuenta del cliente guardada en referencia_externa
+      const cuentaCliente = Number(
+        ultimo.ReferenciaExterna ||
+          ultimo.referencia_externa ||
+          ultimo.referenciaExterna ||
+          0
+      );
+
+      const monto = Number(ultimo.Monto || ultimo.monto || 0);
+
+      if (!cuentaCliente || !monto) {
+        req.session.mensajeReservas =
+          'No se pudo determinar la información del pago. No se realizó el reembolso.';
+        return res.redirect('/reservas');
+      }
+
+      // Cuenta del comercio: siempre la misma, la obtenemos por EMPRESA_CEDULA
+      let cuentaComercio = 0;
+      try {
+        const cuentasEmpresa = await bancoClient.obtenerCuentasPorCliente(
+          bancoClient.EMPRESA_CEDULA
+        );
+        const listaEmp = Array.isArray(cuentasEmpresa) ? cuentasEmpresa : [];
+        if (!listaEmp.length) {
+          req.session.mensajeReservas =
+            'No se encontró la cuenta de la empresa para hacer el reembolso.';
+          return res.redirect('/reservas');
+        }
+        cuentaComercio = Number(listaEmp[0].cuenta_id);
+      } catch (e) {
+        console.error(
+          'Error obteniendo cuenta de empresa para reembolso:',
+          e.message || e
+        );
+        req.session.mensajeReservas =
+          'No se pudo obtener la cuenta de la empresa. No se realizó el reembolso.';
+        return res.redirect('/reservas');
+      }
+
+      // 3) Hacer transacción inversa en MiBanca (reembolso)
+      let refundOk = false;
+      try {
+        const trx = await bancoClient.crearTransaccion({
+          cuentaOrigen: cuentaComercio, // comercio devuelve el dinero
+          cuentaDestino: cuentaCliente, // cliente recibe el reembolso
+          monto,
+          tipoTransaccion: `Reembolso reserva UrbanDrive #${idReserva}`
+        });
+
+        const respuesta =
+          trx?.respuesta ||
+          trx?.respuestaBanco ||
+          trx?.status ||
+          trx;
+
+        refundOk = respuesta === 'OK' || respuesta === true;
+      } catch (e) {
+        console.error('Error al hacer reembolso en MiBanca:', e.message || e);
+      }
+
+      if (!refundOk) {
+        req.session.mensajeReservas =
+          'No se pudo realizar el reembolso. La reserva sigue activa.';
+        return res.redirect(`/reservas/${idReserva}`);
+      }
+
+      // 4) Marcar reserva como Cancelada
+      try {
+        await apiClient.actualizarEstadoReserva(idReserva, 'Cancelada');
+      } catch (e) {
+        console.error(
+          'Error al cancelar reserva luego del reembolso:',
+          e.message || e
+        );
+        req.session.mensajeReservas =
+          'Se realizó el reembolso, pero no se pudo cancelar la reserva. Revisa con soporte.';
+        return res.redirect(`/reservas/${idReserva}`);
+      }
+
+      req.session.mensajeReservas =
+        'Reserva cancelada y reembolso realizado correctamente.';
+      return res.redirect('/reservas');
+    }
+
+    // Otros estados
+    req.session.mensajeReservas =
+      'Solo se pueden cancelar reservas Pendientes o Confirmadas.';
+    return res.redirect('/reservas');
+  } catch (err) {
+    console.error(
+      'Error general al cancelar reserva:',
+      err.response?.data || err.message
+    );
+    req.session.mensajeReservas =
+      'No se pudo cancelar la reserva. Intenta nuevamente.';
+    return res.redirect('/reservas');
+  }
+}
+
 module.exports = {
   listarMisReservas,
   verDetalleReserva,
-  pagarReserva
+  pagarReserva,
+  cancelarReserva
 };

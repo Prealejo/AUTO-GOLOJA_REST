@@ -1,6 +1,6 @@
 // src/controllers/carrito.controller.js
 
-const apiClient = require('../services/apiClientSoap');
+const apiClient = require('../services/apiClientRest');
 
 // =====================================================
 // Helpers generales de fecha para validación de solapes
@@ -249,20 +249,27 @@ const agregarItem = async (req, res) => {
       mensaje: resultado?.mensaje || 'Vehiculo agregado al carrito correctamente.',
       carritoId: carritoId
     });
-  } catch (err) {
-    console.error('Error al agregar al carrito:', err);
+   } catch (err) {
+    const data = err.response?.data || {};
+    const exceptionMsg =
+      data.ExceptionMessage ||
+      data.Message ||
+      data.message ||
+      '';
+
+    // Log corto para debug
+    console.error('[Carrito] Error al agregar vehículo:', exceptionMsg || err.message);
 
     let mensaje =
       'No se pudo agregar el vehiculo al carrito. Intentalo nuevamente.';
 
-    const texto = (err.message || err.toString() || '').toLowerCase();
+    const texto = (exceptionMsg || err.message || '').toLowerCase();
 
     if (texto.includes('no esta disponible') || texto.includes('no está disponible')) {
       mensaje =
         'Ese vehiculo no esta disponible en las fechas seleccionadas. Prueba con otras fechas.';
     } else if (texto.includes('mantenimiento')) {
-      mensaje =
-        'Ese vehiculo esta en mantenimiento para esas fechas.';
+      mensaje = 'Ese vehiculo esta en mantenimiento para esas fechas.';
     } else if (
       texto.includes('datos invalidos') ||
       texto.includes('datos inválidos') ||
@@ -277,6 +284,7 @@ const agregarItem = async (req, res) => {
       mensaje
     });
   }
+
 };
 
 // =======================

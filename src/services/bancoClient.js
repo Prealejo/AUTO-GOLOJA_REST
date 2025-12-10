@@ -5,7 +5,7 @@ const axios = require('axios');
 const BANCO_API_BASE_URL = 'http://mibanca.runasp.net/api';
 
 // Cedula del “cliente empresa” (la que termina en 02)
-const EMPRESA_CEDULA = process.env.BANCO_EMPRESA_CEDULA || '1725985302';
+const EMPRESA_CEDULA = process.env.BANCO_EMPRESA_CEDULA || '1725910473';
 
 const bancoApi = axios.create({
   baseURL: BANCO_API_BASE_URL,

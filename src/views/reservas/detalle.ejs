@@ -19,6 +19,8 @@
       </header>
 
       <div class="resumen-body">
+        <% const idReservaVista = reserva.IdReserva || reserva.idReserva; %>
+
         <!-- DATOS DEL CLIENTE -->
         <section class="resumen-cliente">
           <h2>Datos del cliente</h2>
@@ -48,7 +50,7 @@
             </thead>
             <tbody>
               <tr>
-                <td><%= reserva.IdReserva || reserva.idReserva %></td>
+                <td><%= idReservaVista %></td>
                 <td><%= reserva.VehiculoNombre || reserva.vehiculoNombre %></td>
                 <td>$ <%= precioDia ? precioDia.toFixed(2) : '0.00' %></td>
                 <td>
@@ -69,20 +71,19 @@
 
           <!-- RESUMEN DE COSTOS -->
           <div class="resumen-totales">
-  <p>
-    Subtotal:
-    <span>$ <%= subtotal.toFixed(2) %></span>
-  </p>
-  <p>
-    TAX (8.875%):
-    <span>$ <%= iva.toFixed(2) %></span>
-  </p>
-  <p class="total-final">
-    Total a pagar:
-    <span>$ <%= totalConIva.toFixed(2) %></span>
-  </p>
-</div>
-
+            <p>
+              Subtotal:
+              <span>$ <%= subtotal.toFixed(2) %></span>
+            </p>
+            <p>
+              TAX (8.875%):
+              <span>$ <%= iva.toFixed(2) %></span>
+            </p>
+            <p class="total-final">
+              Total a pagar:
+              <span>$ <%= totalConIva.toFixed(2) %></span>
+            </p>
+          </div>
         </section>
 
         <!-- MENSAJES DE PAGO -->
@@ -98,8 +99,8 @@
           </div>
         <% } %>
 
-        <!-- SI YA HAY INFO DE PAGO, MOSTRAMOS RESUMEN DE TRANSACCIÓN -->
         <% if (infoPago) { %>
+          <!-- HAY PAGO REGISTRADO -->
           <section class="resumen-transaccion">
             <h2>Detalles del pago</h2>
             <p>
@@ -130,39 +131,89 @@
             </p>
           </section>
 
-          <% if (typeof facturaUrl !== 'undefined' && facturaUrl) { %>
-            <div class="resumen-factura-btn">
+          <div class="resumen-factura-btn">
+            <% if (typeof facturaUrl !== 'undefined' && facturaUrl) { %>
               <a href="<%= facturaUrl %>" target="_blank" class="btn-factura">
                 Ver factura
               </a>
-            </div>
-          <% } %>
-        <% } else { %>
-          <!-- FORMULARIO DE PAGO -->
-          <div class="resumen-footer">
+            <% } %>
+
             <form
               method="post"
-              action="/reservas/<%= reserva.IdReserva || reserva.idReserva %>/pagar"
+              action="/reservas/<%= idReservaVista %>/cancelar"
+              class="form-cancelar-reserva"
+            >
+              <button type="submit" class="btn-cancelar-reserva">
+                Cancelar reserva
+              </button>
+            </form>
+          </div>
+
+        <% } else if (estadoReserva === 'Confirmada') { %>
+          <!-- RESERVA CONFIRMADA PERO SIN infoPago -->
+          <section class="resumen-transaccion">
+            <h2>Reserva ya confirmada</h2>
+            <p>
+              Esta reserva ya figura como confirmada. No se muestra el formulario de pago
+              porque se asume que el cobro ya fue realizado.
+            </p>
+          </section>
+
+          <div class="resumen-factura-btn">
+            <% if (typeof facturaUrl !== 'undefined' && facturaUrl) { %>
+              <a href="<%= facturaUrl %>" target="_blank" class="btn-factura">
+                Ver factura
+              </a>
+            <% } %>
+
+            <form
+              method="post"
+              action="/reservas/<%= idReservaVista %>/cancelar"
+              class="form-cancelar-reserva"
+            >
+              <button type="submit" class="btn-cancelar-reserva">
+                Cancelar reserva
+              </button>
+            </form>
+          </div>
+
+        <% } else { %>
+          <!-- RESERVA PENDIENTE: FORMULARIO DE PAGO + CANCELAR -->
+          <div class="resumen-footer">
+            <form
+              id="formPago"
+              method="post"
+              action="/reservas/<%= idReservaVista %>/pagar"
               class="form-pago"
             >
               <label for="cedula" class="resumen-label">
                 Cédula del titular de la cuenta MiBanca
               </label>
-<input
-  type="text"
-  id="cedula"
-  name="cedula"
-  maxlength="10"
-  required
-  class="input-cedula"
-  placeholder="1725985301"
-  inputmode="numeric"
-  pattern="^[0-9]{10}$"
-  title="Ingresa solo números, 10 dígitos"
-  oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-/>
-              <button type="submit" class="btn-pagar">
+              <input
+                type="text"
+                id="cedula"
+                name="cedula"
+                maxlength="10"
+                required
+                class="input-cedula"
+                placeholder="1725985301"
+                inputmode="numeric"
+                pattern="^[0-9]{10}$"
+                title="Ingresa solo números, 10 dígitos"
+                oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+              />
+              <button type="submit" id="btnPagar" class="btn-pagar">
                 Proceder al pago
+              </button>
+            </form>
+
+            <form
+              method="post"
+              action="/reservas/<%= idReservaVista %>/cancelar"
+              class="form-cancelar-reserva"
+            >
+              <button type="submit" class="btn-cancelar-reserva">
+                Cancelar reserva
               </button>
             </form>
           </div>
@@ -171,5 +222,28 @@
       </div>
     </section>
   </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const formPago = document.getElementById('formPago');
+      const btnPagar = document.getElementById('btnPagar');
+
+      if (formPago && btnPagar) {
+        formPago.addEventListener('submit', function () {
+          if (btnPagar.disabled) return;
+          btnPagar.disabled = true;
+          btnPagar.innerText = 'Procesando...';
+        });
+      }
+
+      const cancelForms = document.querySelectorAll('.form-cancelar-reserva');
+      cancelForms.forEach(function (f) {
+        f.addEventListener('submit', function (e) {
+          const ok = confirm('¿Seguro que deseas cancelar esta reserva?');
+          if (!ok) e.preventDefault();
+        });
+      });
+    });
+  </script>
 </body>
 </html>

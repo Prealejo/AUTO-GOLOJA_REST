@@ -11,7 +11,7 @@
 
   <main class="vehiculos-main">
     <section class="resumen-card">
-            <header class="resumen-header">
+      <header class="resumen-header">
         <h1>Mis reservas</h1>
 
         <% if (mensaje) { %>
@@ -26,7 +26,6 @@
           </div>
         <% } %>
       </header>
-
 
       <% if (error) { %>
         <p class="resumen-vacio"><%= error %></p>
@@ -60,9 +59,16 @@
                 </td>
                 <td>$ <%= Number(r.Total || r.total || 0).toFixed(2) %></td>
                 <td>
-                  <a href="/reservas/<%= r.IdReserva || r.idReserva %>" class="link-detalle-reserva">
-                    Ver detalle
-                  </a>
+                  <% if (estado === 'cancelada') { %>
+                    <!-- Cancelada: no dejamos ir al detalle -->
+                    <span class="link-detalle-reserva link-detalle-reserva--disabled">
+                      Ver detalle
+                    </span>
+                  <% } else { %>
+                    <a href="/reservas/<%= r.IdReserva || r.idReserva %>" class="link-detalle-reserva">
+                      Ver detalle
+                    </a>
+                  <% } %>
                 </td>
               </tr>
             <% }); %>
